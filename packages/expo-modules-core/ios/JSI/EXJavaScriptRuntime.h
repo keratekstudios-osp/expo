@@ -39,7 +39,7 @@ typedef jsi::Value (^JSHostFunctionBlock)(jsi::Runtime &runtime,
 #endif // __cplusplus
 
 NS_SWIFT_SENDABLE
-NS_SWIFT_NAME(JavaScriptRuntime)
+//NS_SWIFT_NAME(JavaScriptRuntime)
 @interface EXJavaScriptRuntime : NSObject
 
 /**

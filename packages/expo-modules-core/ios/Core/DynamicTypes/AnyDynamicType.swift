@@ -1,5 +1,7 @@
 // Copyright 2021-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  A protocol whose intention is to wrap any type
  to keep its real signature and not type-erase it by the compiler.

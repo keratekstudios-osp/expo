@@ -7,7 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef EXJavaScriptObject * _Nonnull (^EXJavaScriptObjectBindingGetter)(void);
 
-NS_SWIFT_NAME(JavaScriptObjectBinding)
+//NS_SWIFT_NAME(JavaScriptObjectBinding)
 @interface EXJavaScriptObjectBinding : NSObject
 
 @property (nonatomic, copy) EXJavaScriptObjectBindingGetter getter;

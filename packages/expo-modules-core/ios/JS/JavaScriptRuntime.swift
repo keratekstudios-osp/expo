@@ -1,5 +1,7 @@
 // Copyright 2022-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 public extension JavaScriptRuntime {
   /**
    A type of the closure that you pass to the `createSyncFunction` function.

@@ -1,5 +1,7 @@
 // Copyright 2022-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Type-erased protocol for synchronous functions.
  */
@@ -154,5 +156,15 @@ public class SyncFunctionDefinition<Args, FirstArgType, ReturnType>: AnySyncFunc
       }
       return try self.call(appContext, withThis: this, arguments: arguments)
     }
+  }
+
+  @JavaScriptActor
+  func build(appContext: AppContext) throws -> JS.Object {
+    return try appContext.sxxRuntime.createSyncFunction(name) { this, arguments in
+      guard let appContext else {
+        throw Exceptions.AppContextLost()
+      }
+      return try self.call(appContext, withThis: this, arguments: arguments)
+    }.toObject()
   }
 }

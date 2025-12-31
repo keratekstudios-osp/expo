@@ -1,5 +1,7 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Class that extends the standard JavaScript runtime with some Expo-specific features.
  For instance, the global `expo` object is available only in Expo runtimes.

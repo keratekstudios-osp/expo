@@ -1,6 +1,7 @@
 // Copyright 2022-present 650 Industries. All rights reserved.
 
 import Dispatch
+import ExpoModulesJSI
 
 /**
  Type-erased protocol for asynchronous functions.

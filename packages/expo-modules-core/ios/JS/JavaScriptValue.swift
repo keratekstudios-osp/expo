@@ -1,5 +1,7 @@
 // Copyright 2022-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Enum with available kinds of values. It's almost the same as a result of "typeof"
  in JavaScript, however `null` has its own kind (typeof null == "object").

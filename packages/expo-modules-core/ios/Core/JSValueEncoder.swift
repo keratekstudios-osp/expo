@@ -1,5 +1,7 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Encodes `Encodable` objects or values to `JavaScriptValue`. This implementation is incomplete,
  but it supports basic use cases with structs defined by the user and when the default `Encodable` implementation is used.

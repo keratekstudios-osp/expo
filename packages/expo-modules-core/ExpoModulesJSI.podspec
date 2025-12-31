@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms       = {
-    :ios => '15.1',
+    :ios => '16.4',
     :osx => '11.0',
     :tvos => '15.1'
   }
@@ -26,6 +26,9 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     'USE_HEADERMAP' => 'YES',
     'DEFINES_MODULE' => 'YES',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
+    'SWIFT_OBJC_INTEROP_MODE' => 'objcxx',
+    'OTHER_SWIFT_FLAGS' => "-Xfrontend -clang-header-expose-decls=has-expose-attr",
   }
 
   if use_hermes
@@ -37,11 +40,19 @@ Pod::Spec.new do |s|
   s.dependency 'React-Core'
   s.dependency 'ReactCommon'
 
-  s.source_files = ['ios/JSI/**/*.{h,m,mm,swift,cpp}', 'common/cpp/JSI/**/*.{h,cpp}']
+  s.source_files = ['ios/JSI/**/*.{h,hpp,m,mm,swift,cpp}', 'common/cpp/JSI/**/*.{h,hpp,cpp}']
   s.exclude_files = ['ios/JSI/Tests']
   s.private_header_files = ['ios/JSI/**/*+Private.h', 'ios/JSI/**/Swift.h']
 
   s.test_spec 'Tests' do |test_spec|
+    # Use higher deployment targets than the module itself.
+    # It is a bit of a hassle to do availability checks in Swift Testing.
+    # Our Swift/C++ interop requires iOS 16.4 as we need macros for reference types.
+    test_spec.platforms = {
+      :ios => '17.0',
+      :osx => '12.0',
+      :tvos => '17.0'
+    }
     test_spec.source_files = 'ios/JSI/Tests/**/*.{m,swift}'
   end
 end

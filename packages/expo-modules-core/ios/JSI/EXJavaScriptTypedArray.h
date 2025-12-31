@@ -20,7 +20,7 @@ typedef NS_ENUM(NSInteger, EXTypedArrayKind) {
   BigUint64Array = 11,
 } NS_SWIFT_NAME(TypedArrayKind);
 
-NS_SWIFT_NAME(JavaScriptTypedArray)
+//NS_SWIFT_NAME(JavaScriptTypedArray)
 @interface EXJavaScriptTypedArray : EXJavaScriptObject
 
 @property (nonatomic) EXTypedArrayKind kind;

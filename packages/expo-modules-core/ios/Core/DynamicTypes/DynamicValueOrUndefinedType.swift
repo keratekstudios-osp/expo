@@ -1,5 +1,7 @@
 // Copyright 2021-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 internal struct DynamicValueOrUndefinedType<InnerType: AnyArgument>: AnyDynamicType {
   let innerType: InnerType.Type = InnerType.self
   let dynamicInnerType: AnyDynamicType = InnerType.getDynamicType()

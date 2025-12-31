@@ -51,7 +51,7 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms       = {
-    :ios => '15.1',
+    :ios => '16.4',
     :osx => '11.0',
     :tvos => '15.1'
   }
@@ -74,16 +74,17 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
     'SWIFT_COMPILATION_MODE' => 'wholemodule',
-    'OTHER_SWIFT_FLAGS' => "$(inherited) #{new_arch_enabled ? new_arch_compiler_flags : ''}",
+    'OTHER_SWIFT_FLAGS' => "$(inherited) #{new_arch_enabled ? new_arch_compiler_flags : ''} -Xfrontend -clang-header-expose-decls=has-expose-attr",
     'HEADER_SEARCH_PATHS' => header_search_paths.join(' '),
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) EXPO_MODULES_CORE_VERSION=' + package['version'],
+    'SWIFT_OBJC_INTEROP_MODE' => 'objcxx',
   }
-  s.user_target_xcconfig = {
-    "HEADER_SEARCH_PATHS" => [
-      '"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header"',
-      '"$(PODS_ROOT)/Headers/Private/Yoga"', # Expo.h -> ExpoModulesCore-umbrella.h -> Fabric ViewProps.h -> Private Yoga headers
-    ],
-  }
+  # s.user_target_xcconfig = {
+  #   "HEADER_SEARCH_PATHS" => [
+  #     '"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header"',
+  #     '"$(PODS_ROOT)/Headers/Private/Yoga"', # Expo.h -> ExpoModulesCore-umbrella.h -> Fabric ViewProps.h -> Private Yoga headers
+  #   ],
+  # }
 
   if use_hermes
     s.dependency 'hermes-engine'

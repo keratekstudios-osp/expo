@@ -1,5 +1,7 @@
 // Copyright 2015-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  A dynamic type representing dictionary types. Requires the dictionary's value type
  for the initialization as it delegates casting to that type for each element in the dictionary.

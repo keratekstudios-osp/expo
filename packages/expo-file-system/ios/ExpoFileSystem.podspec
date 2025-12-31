@@ -26,6 +26,8 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES'
   }
 
+  install_modules_dependencies(s)
+
   s.resource_bundles = {'ExpoFileSystem_privacy' => ['PrivacyInfo.xcprivacy']}
 
   s.source_files = "**/*.{h,m,swift}"

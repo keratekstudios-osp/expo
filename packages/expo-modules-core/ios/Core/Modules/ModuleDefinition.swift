@@ -1,3 +1,5 @@
+import ExpoModulesJSI
+
 let DEFAULT_MODULE_VIEW = "DEFAULT_MODULE_VIEW"
 
 /**

@@ -1,90 +1,96 @@
-import { ThemeProvider } from 'ThemeProvider';
-import * as Splashscreen from 'expo-splash-screen';
-import React from 'react';
-import * as DevMenu from 'expo-dev-menu';
+// import { ThemeProvider } from 'ThemeProvider';
+// import * as Splashscreen from 'expo-splash-screen';
+// import React from 'react';
+// import * as DevMenu from 'expo-dev-menu';
 
-import MainNavigator, { optionalRequire } from './MainNavigator';
+import { Text } from 'react-native';
 
-let Notifications;
-try {
-  Notifications = require('expo-notifications');
-} catch {
-  // do nothing
-}
+// import MainNavigator, { optionalRequire } from './MainNavigator';
 
-DevMenu.registerDevMenuItems([
-  {
-    name: 'Action 1',
-    callback: () => {
-      console.log('Action 1 executed');
-    },
-    shouldCollapse: true,
-  },
-  {
-    name: 'Action 2',
-    callback: () => {
-      console.log('Action 2 executed');
-    },
-    shouldCollapse: false,
-  },
-]);
+// let Notifications;
+// try {
+//   Notifications = require('expo-notifications');
+// } catch {
+//   // do nothing
+// }
 
-Splashscreen.setOptions({ fade: true, duration: 800 });
+// DevMenu.registerDevMenuItems([
+//   {
+//     name: 'Action 1',
+//     callback: () => {
+//       console.log('Action 1 executed');
+//     },
+//     shouldCollapse: true,
+//   },
+//   {
+//     name: 'Action 2',
+//     callback: () => {
+//       console.log('Action 2 executed');
+//     },
+//     shouldCollapse: false,
+//   },
+// ]);
 
-// Require the `BackgroundTaskScreen` component from `native-component-list` if it's available
-// so that we load the module and register its background task on startup.
-optionalRequire(() => require('native-component-list/src/screens/BackgroundTaskScreen'));
+// Splashscreen.setOptions({ fade: true, duration: 800 });
 
-// Require the `BackgroundFetchScreen` component from `native-component-list` if it's available
-// so that we load the module and register its background task on startup.
-optionalRequire(() => require('native-component-list/src/screens/BackgroundFetchScreen'));
+// // Require the `BackgroundTaskScreen` component from `native-component-list` if it's available
+// // so that we load the module and register its background task on startup.
+// optionalRequire(() => require('native-component-list/src/screens/BackgroundTaskScreen'));
 
-const loadAssetsAsync =
-  optionalRequire(() => require('native-component-list/src/utilities/loadAssetsAsync')) ??
-  (async () => null);
+// // Require the `BackgroundFetchScreen` component from `native-component-list` if it's available
+// // so that we load the module and register its background task on startup.
+// optionalRequire(() => require('native-component-list/src/screens/BackgroundFetchScreen'));
 
-function useLoaded() {
-  const [isLoaded, setLoaded] = React.useState(false);
-  React.useEffect(() => {
-    let isMounted = true;
-    // @ts-ignore
-    loadAssetsAsync()
-      .then(() => {
-        if (isMounted) setLoaded(true);
-        Splashscreen.hide();
-      })
-      .catch((e) => {
-        console.warn('Error loading assets: ' + e.message);
-        if (isMounted) setLoaded(true);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-  return isLoaded;
-}
+// const loadAssetsAsync =
+//   optionalRequire(() => require('native-component-list/src/utilities/loadAssetsAsync')) ??
+//   (async () => null);
 
-export default function Main() {
-  React.useEffect(() => {
-    try {
-      const subscription = Notifications.addNotificationResponseReceivedListener(
-        ({ notification, actionIdentifier }) => {
-          console.info(
-            `User interacted with a notification (action = ${actionIdentifier}): ${JSON.stringify(
-              notification,
-              null,
-              2
-            )}`
-          );
-        }
-      );
-      return () => subscription?.remove();
-    } catch (e) {
-      console.debug('Could not have added a listener for received notification responses.', e);
-    }
-  }, []);
+// function useLoaded() {
+//   const [isLoaded, setLoaded] = React.useState(false);
+//   React.useEffect(() => {
+//     let isMounted = true;
+//     // @ts-ignore
+//     loadAssetsAsync()
+//       .then(() => {
+//         if (isMounted) setLoaded(true);
+//         Splashscreen.hide();
+//       })
+//       .catch((e) => {
+//         console.warn('Error loading assets: ' + e.message);
+//         if (isMounted) setLoaded(true);
+//       });
+//     return () => {
+//       isMounted = false;
+//     };
+//   }, []);
+//   return isLoaded;
+// }
 
-  const isLoaded = useLoaded();
+// export default function Main() {
+//   React.useEffect(() => {
+//     try {
+//       const subscription = Notifications.addNotificationResponseReceivedListener(
+//         ({ notification, actionIdentifier }) => {
+//           console.info(
+//             `User interacted with a notification (action = ${actionIdentifier}): ${JSON.stringify(
+//               notification,
+//               null,
+//               2
+//             )}`
+//           );
+//         }
+//       );
+//       return () => subscription?.remove();
+//     } catch (e) {
+//       console.debug('Could not have added a listener for received notification responses.', e);
+//     }
+//   }, []);
 
-  return <ThemeProvider>{isLoaded ? <MainNavigator /> : null}</ThemeProvider>;
+//   const isLoaded = useLoaded();
+
+//   return <ThemeProvider>{isLoaded ? <MainNavigator /> : null}</ThemeProvider>;
+// }
+
+export default function App() {
+  return <Text>Czesc</Text>;
 }

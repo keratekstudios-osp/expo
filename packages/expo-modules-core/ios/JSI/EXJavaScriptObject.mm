@@ -102,7 +102,7 @@
 
 - (void)setObjectDeallocator:(void (^)(void))deallocatorBlock
 {
-  expo::common::setDeallocator(*[_runtime get], _jsObjectPtr, deallocatorBlock);
+  expo::common::setDeallocator(*[_runtime get], *_jsObjectPtr, deallocatorBlock);
 }
 
 #pragma mark - Equality

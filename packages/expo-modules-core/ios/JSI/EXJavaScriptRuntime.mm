@@ -6,7 +6,7 @@
 #import <ExpoModulesJSI/TestingJSCallInvoker.h>
 #import <ExpoModulesJSI/JSIUtils.h>
 
-#import <jsi/jsi.h>
+#import "jsi.h"
 #import <hermes/hermes.h>
 #import <ReactCommon/SchedulerPriority.h>
 #import <react/renderer/runtimescheduler/RuntimeSchedulerCallInvoker.h>

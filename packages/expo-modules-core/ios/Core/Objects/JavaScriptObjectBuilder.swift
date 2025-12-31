@@ -1,5 +1,7 @@
 // Copyright 2022-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  A type that can decorate a `JavaScriptObject` with some properties.
  */
@@ -20,6 +22,10 @@ internal protocol JavaScriptObjectBuilder: JavaScriptObjectDecorator {
    */
   @JavaScriptActor
   func build(appContext: AppContext) throws -> JavaScriptObject
+
+  @available(iOS 16.4, *)
+  @JavaScriptActor
+  func build(appContext: AppContext) throws -> JSwiftObject
 }
 
 /**
@@ -32,6 +38,12 @@ extension JavaScriptObjectBuilder {
     let object = try appContext.runtime.createObject()
     try decorate(object: object, appContext: appContext)
     return object
+  }
+
+  @available(iOS 16.4, *)
+  @JavaScriptActor
+  func build(appContext: AppContext) throws -> JSwiftObject {
+    fatalError()
   }
 
   @JavaScriptActor

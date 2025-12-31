@@ -1,5 +1,7 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 protocol AnyConstantDefinition {
   /**
    Name of the constant.

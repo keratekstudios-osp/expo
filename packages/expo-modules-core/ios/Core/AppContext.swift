@@ -1,4 +1,5 @@
 @preconcurrency import React
+import ExpoModulesJSI
 
 /**
  The app context is an interface to a single Expo app.
@@ -76,6 +77,11 @@ public final class AppContext: NSObject, @unchecked Sendable {
         }
       } else if _runtime != oldValue {
         JavaScriptActor.assumeIsolated {
+          if #available(iOS 16.4, *) {
+            // Create a new Swift/C++ runtime to use it whenever possible
+            _sxxRuntime = JS.Runtime(_runtime!.get())
+          }
+
           // Try to install the core object automatically when the runtime changes.
           try? prepareRuntime()
         }
@@ -89,6 +95,18 @@ public final class AppContext: NSObject, @unchecked Sendable {
   public var runtime: ExpoRuntime {
     get throws {
       if let runtime = _runtime {
+        return runtime
+      }
+      throw Exceptions.RuntimeLost()
+    }
+  }
+
+  public var _sxxRuntime: Any?
+
+  @available(iOS 16.4, *)
+  public var sxxRuntime: JS.Runtime {
+    get throws {
+      if let runtime = _sxxRuntime as? JS.Runtime {
         return runtime
       }
       throw Exceptions.RuntimeLost()
@@ -477,8 +495,149 @@ public final class AppContext: NSObject, @unchecked Sendable {
 
   // MARK: - Runtime
 
+  @available(iOS 16.4, *)
+  func testCxx() throws {
+    let runtime = try runtime
+    let sxxRuntime = try sxxRuntime
+    let object = runtime.createObject()
+
+    func measure(_ name: String, _ body: () -> Void) {
+      let start = CACurrentMediaTime()
+      for _ in 0..<100_000 {
+        body()
+      }
+      let end = CACurrentMediaTime()
+      print("\(name): \(end - start)")
+    }
+
+    var newRuntime = expo.jswift.Runtime(runtime.get())
+    var newObject = newRuntime.createObject()
+    var sxxObject = sxxRuntime.createObject()
+
+    let obj = newRuntime.test()
+
+    // runtime.createObject
+    measure("[Obj] Runtime.createObject") {
+      runtime.createObject()
+    }
+    measure("[C++] Runtime.createObject") {
+      newRuntime.createObject()
+    }
+    measure("[Sxx] Runtime.createObject") {
+      sxxRuntime.createObject()
+    }
+
+    // setProperty
+    measure("[Obj] Object.setProperty") {
+      object.setProperty("test", value: 21.37)
+    }
+    measure("[C++] Object.setProperty") {
+      newObject.setProperty("test", 21.37)
+    }
+    measure("[Sxx] Object.setProperty") {
+      sxxObject.setProperty("test", 21.37)
+    }
+
+    // hasProperty
+    measure("[Obj] Object.hasProperty") {
+      object.hasProperty("test")
+    }
+    measure("[C++] Object.hasProperty") {
+      newObject.hasProperty("test")
+    }
+    measure("[Sxx] Object.hasProperty") {
+      sxxObject.hasProperty("test")
+    }
+
+    // getProperty
+    measure("[Obj] Object.getProperty") {
+      object.getProperty("test")
+    }
+    measure("[C++] Object.getProperty") {
+      newObject.getProperty("test")
+    }
+    measure("[Sxx] Object.getProperty") {
+      sxxObject.getProperty("test")
+    }
+
+    // getPropertyNames
+    measure("[Obj] Object.getPropertyNames") {
+      object.getPropertyNames()
+    }
+    measure("[C++] Object.getPropertyNames") {
+      newObject.getPropertyNames()
+    }
+    measure("[Sxx] Object.getPropertyNames") {
+      sxxObject.getPropertyNames()
+    }
+
+    measure("[Obj] Object.defineProperty") {
+      object.defineProperty("defined", value: nil, options: .configurable)
+    }
+//    measure("[C++] defineProperty") {
+//      newObject.defineProperty("defined", nil)
+//    }
+    measure("[Sxx] Object.defineProperty") {
+      sxxObject.defineProperty("defined", descriptor: .init(
+        configurable: true
+      ))
+    }
+
+    // createSyncFunction
+    measure("[Obj] Runtime.createSyncFunction") {
+      let _ = runtime.createSyncFunction("function") { this, arguments in
+        return .undefined
+      }
+    }
+    measure("[Sxx] Runtime.createSyncFunction") {
+      let _ = sxxRuntime.createSyncFunction("function") { this, arguments in
+        return .undefined
+      }
+    }
+
+    let objcFunction = runtime.createSyncFunction("test") { this, arguments in
+      print(arguments[0].getDouble(), arguments[1].getDouble())
+      return .undefined
+    }
+    let sxxFunction = sxxRuntime.createSyncFunction("test") { this, arguments in
+      return .undefined
+    }
+    measure("[Sxx] Sync function call") {
+      sxxFunction.call(arguments: 21, 37)
+    }
+
+    measure("[Obj] String -> JS value") {
+      JavaScriptValue.from("test", runtime: runtime)
+    }
+    measure("[C++] String -> JS value") {
+      expo.jswift.Value(&newRuntime, std.string("test"))
+    }
+    measure("[Sxx] String -> JS value") {
+      JSwiftValue(sxxRuntime, "test")
+    }
+
+    measure("[Obj] Dictionary -> JS object") {
+      JavaScriptValue.from(["key": "value"], runtime: runtime).getObject()
+    }
+    measure("[Sxx] Dictionary -> JS object") {
+      JSwiftObject(sxxRuntime, ["key": "value"])
+    }
+
+//    let strValue = expo.jswift.Value(&newRuntime, "test")
+//    let boolValue = expo.jswift.Value(&newRuntime, true)
+//    let doubleValue = expo.jswift.Value(&newRuntime, 21.37)
+//
+//    print("strValue:", strValue.getString())
+//    print("boolValue:", boolValue.getBool())
+//    print("doubleValue:", doubleValue.getDouble())
+  }
+
   @JavaScriptActor
   internal func prepareRuntime() throws {
+    if #available(iOS 16.4, *) {
+      try? testCxx()
+    }
+
     let runtime = try runtime
     let coreObject = runtime.createObject()
 

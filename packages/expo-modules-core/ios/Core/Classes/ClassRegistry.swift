@@ -1,5 +1,7 @@
 // Copyright 2023-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 internal final class ClassRegistry {
   var nativeToJS = [ObjectIdentifier: JavaScriptWeakObject]()
 

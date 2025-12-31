@@ -5,12 +5,12 @@
 #import <ExpoModulesJSI/EXJavaScriptRuntime.h>
 
 #ifdef __cplusplus
-#import <jsi/jsi.h>
+#import "jsi.h"
 
 namespace jsi = facebook::jsi;
 #endif // __cplusplus
 
-NS_SWIFT_NAME(JavaScriptWeakObject)
+//NS_SWIFT_NAME(JavaScriptWeakObject)
 @interface EXJavaScriptWeakObject : NSObject
 
 #ifdef __cplusplus

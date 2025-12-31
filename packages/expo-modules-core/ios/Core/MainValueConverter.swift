@@ -1,5 +1,7 @@
 // Copyright 2024-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  A converter associated with the specific app context that delegates value conversions to the dynamic type converters.
  */
@@ -18,6 +20,15 @@ public struct MainValueConverter {
     let rawValue = try type.cast(jsValue: value, appContext: appContext)
 
     // Cast common native type to more complex types (e.g. records, convertibles, enumerables, shared objects).
+    return try type.cast(rawValue, appContext: appContext)
+  }
+
+  @available(iOS 16.4, *)
+  public func toNative(_ value: borrowing JSwiftValue, _ type: AnyDynamicType) throws -> Any {
+    guard let appContext else {
+      throw Exceptions.AppContextLost()
+    }
+    let rawValue = try type.cast(jsValue: value, appContext: appContext)
     return try type.cast(rawValue, appContext: appContext)
   }
 
@@ -40,6 +51,17 @@ public struct MainValueConverter {
         throw ArgumentCastException((index: index - 1, type: type)).causedBy(error)
       }
     }
+  }
+
+  @available(iOS 16.4, *)
+  public func toNative(_ values: JSValuesBuffer, _ types: [AnyDynamicType]) throws -> [Any] {
+    var results: [Any] = []
+    results.reserveCapacity(values.count)
+
+    for index in 0..<values.count {
+      results.append(try toNative(values[index], types[index]))
+    }
+    return results
   }
 
   /**

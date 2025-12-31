@@ -3,7 +3,7 @@
 #import <Foundation/Foundation.h>
 
 #ifdef __cplusplus
-#import <jsi/jsi.h>
+#import "jsi.h"
 
 namespace jsi = facebook::jsi;
 #endif // __cplusplus
@@ -30,7 +30,7 @@ typedef NS_OPTIONS(NSInteger, EXJavaScriptObjectPropertyDescriptor) {
   EXJavaScriptObjectPropertyDescriptorWritable = 1 << 2,
 } NS_SWIFT_NAME(JavaScriptObjectPropertyDescriptor);
 
-NS_SWIFT_NAME(JavaScriptObject)
+//NS_SWIFT_NAME(JavaScriptObject)
 @interface EXJavaScriptObject : NSObject
 
 // Some parts of the interface must be hidden for Swift – it can't import any C++ code.

@@ -1,5 +1,7 @@
 // Copyright 2023-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Represents a JavaScript function that can be called by the native code and that must return the given generic `ReturnType`.
  */

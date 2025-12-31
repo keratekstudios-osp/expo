@@ -4,7 +4,7 @@
 #import <ExpoModulesJSI/EXJavaScriptObject.h>
 
 #ifdef __cplusplus
-#import <jsi/jsi.h>
+#import "jsi.h"
 namespace jsi = facebook::jsi;
 #endif // __cplusplus
 
@@ -15,7 +15,7 @@ namespace jsi = facebook::jsi;
 /**
  Represents any JavaScript value. Its purpose is to exposes `facebook::jsi::Value` API back to Swift.
  */
-NS_SWIFT_NAME(JavaScriptValue)
+//NS_SWIFT_NAME(JavaScriptValue)
 @interface EXJavaScriptValue : NSObject
 
 #ifdef __cplusplus

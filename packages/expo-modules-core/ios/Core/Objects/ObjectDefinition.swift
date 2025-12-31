@@ -1,5 +1,7 @@
 // Copyright 2021-present 650 Industries. All rights reserved.
 
+import ExpoModulesJSI
+
 /**
  Base class for other definitions representing an object, such as `ModuleDefinition`.
  */
