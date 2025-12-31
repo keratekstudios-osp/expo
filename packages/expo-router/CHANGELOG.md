@@ -39,6 +39,7 @@
 - Unify the API between Toolbar, Header items and Link preview ([#41679](https://github.com/expo/expo/pull/41679) by [@Ubax](https://github.com/Ubax))
 - [android] Add Material 3 dynamic color defaults for NativeTabs ([#41869](https://github.com/expo/expo/pull/41869) by [@Ubax](https://github.com/Ubax))
 - [iOS] enable zoom transition by default ([#41891](https://github.com/expo/expo/pull/41891) by [@Ubax](https://github.com/Ubax))
+- [iOS] add usePreventZoomTransitionDismissal ([#41893](https://github.com/expo/expo/pull/41893) by [@Ubax](https://github.com/Ubax))
 
 ### 🐛 Bug fixes
 
