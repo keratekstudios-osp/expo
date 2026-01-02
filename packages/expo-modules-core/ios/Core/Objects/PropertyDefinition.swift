@@ -125,22 +125,22 @@ public final class PropertyDefinition<OwnerType>: AnyDefinition, AnyPropertyDefi
 
   // MARK: - Internals
 
-  internal func getValue<ValueType>(owner: OwnerType? = nil, appContext: AppContext) throws -> ValueType? {
-    let owner = owner as? AnyObject
-    let value = try getter?.call(by: owner, withArguments: [], appContext: appContext)
-    return value as? ValueType
-  }
-
-  internal func setValue(_ value: Any, owner: OwnerType? = nil, appContext: AppContext) {
-    let owner = owner as? AnyObject
-    _ = try? setter?.call(by: owner, withArguments: [value], appContext: appContext)
-  }
+//  internal func getValue<ValueType>(owner: OwnerType? = nil, appContext: AppContext) throws -> ValueType? {
+//    let owner = owner as? AnyObject
+//    let value = try getter?.call(by: owner, withArguments: [], appContext: appContext)
+//    return value as? ValueType
+//  }
+//
+//  internal func setValue(_ value: Any, owner: OwnerType? = nil, appContext: AppContext) {
+//    let owner = owner as? AnyObject
+//    _ = try? setter?.call(by: owner, withArguments: [value], appContext: appContext)
+//  }
 
   /**
    Creates the JavaScript function that will be used as a getter of the property.
    */
-  internal func buildGetter(appContext: AppContext) throws -> JavaScriptObject {
-    return try appContext.runtime.createSyncFunction(name, argsCount: 0) { [weak appContext, weak self, name] this, arguments in
+  internal func buildGetter(appContext: AppContext) throws -> JavaScriptFunction {
+    return try appContext.runtime.createSyncFunction(name) { [weak appContext, weak self, name] this, arguments in
       guard let appContext else {
         throw Exceptions.AppContextLost()
       }
@@ -148,17 +148,17 @@ public final class PropertyDefinition<OwnerType>: AnyDefinition, AnyPropertyDefi
         throw NativePropertyUnavailableException(name)
       }
       guard let getter = self.getter else {
-        return .undefined
+        return JavaScriptValue.undefined
       }
-      return try getter.call(appContext, withThis: this, arguments: arguments)
+      return try getter.call(appContext, this: this, arguments: arguments)
     }
   }
 
   /**
    Creates the JavaScript function that will be used as a setter of the property.
    */
-  internal func buildSetter(appContext: AppContext) throws -> JavaScriptObject {
-    return try appContext.runtime.createSyncFunction(name, argsCount: 1) { [weak appContext, weak self, name] this, arguments in
+  internal func buildSetter(appContext: AppContext) throws -> JavaScriptFunction {
+    return try appContext.runtime.createSyncFunction(name) { [weak appContext, weak self, name] this, arguments in
       guard let appContext else {
         throw Exceptions.AppContextLost()
       }
@@ -168,7 +168,7 @@ public final class PropertyDefinition<OwnerType>: AnyDefinition, AnyPropertyDefi
       guard let setter = self.setter else {
         return .undefined
       }
-      return try setter.call(appContext, withThis: this, arguments: arguments)
+      return try setter.call(appContext, this: this, arguments: arguments)
     }
   }
 
@@ -178,13 +178,13 @@ public final class PropertyDefinition<OwnerType>: AnyDefinition, AnyPropertyDefi
   internal func buildDescriptor(appContext: AppContext) throws -> JavaScriptObject {
     let descriptor = try appContext.runtime.createObject()
 
-    descriptor.setProperty("enumerable", value: true)
+    descriptor.setProperty("enumerable", true)
 
     if getter != nil {
-      descriptor.setProperty("get", value: try buildGetter(appContext: appContext))
+      descriptor.setProperty("get", value: try buildGetter(appContext: appContext).toValue())
     }
     if setter != nil {
-      descriptor.setProperty("set", value: try buildSetter(appContext: appContext))
+      descriptor.setProperty("set", value: try buildSetter(appContext: appContext).toValue())
     }
     return descriptor
   }

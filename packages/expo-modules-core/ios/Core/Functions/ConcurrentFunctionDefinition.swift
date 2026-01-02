@@ -16,7 +16,7 @@ internal protocol AnyConcurrentFunctionDefinition: AnyFunctionDefinition {
  Represents a concurrent function that can only be called asynchronously, thus its JavaScript equivalent returns a Promise.
  As opposed to `AsyncFunctionDefinition`, it can leverage the new Swift's concurrency model and take the async/await closure.
  */
-public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType>: AnyConcurrentFunctionDefinition, @unchecked Sendable {
+public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType: JSRepresentable>: AnyConcurrentFunctionDefinition, @unchecked Sendable {
   typealias ClosureType = (Args) async throws -> ReturnType
 
   let body: ClosureType
@@ -45,24 +45,14 @@ public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType>:
   var takesOwner: Bool = false
   var requiresMainActor: Bool = false
 
-  func call(by owner: AnyObject?, withArguments args: [Any], appContext: AppContext, callback: @Sendable @escaping (FunctionCallResult) -> Void) {
-    // We have to trick the compiler here to make the arguments sendable and nonisolated, otherwise they couldn't be captured.
-    // TODO: Find a way to structure this code better, that is more in line with the concurrency model.
-    let arguments = NonisolatedUnsafeVar<[Any]>([])
+  func call(_ appContext: AppContext, this: borrowing JavaScriptValue, arguments: consuming JSValuesBuffer, callback: @Sendable @escaping (consuming FunctionCallResult) -> Void) {
+    let nativeArguments = NonisolatedUnsafeVar<[Any]>([])
 
     do {
-      try validateArgumentsNumber(function: self, received: args.count)
+      try validateArgumentsNumber(function: self, received: arguments.count)
 
-      arguments.value = concat(
-        arguments: args,
-        withOwner: owner,
-        withPromise: nil,
-        forFunction: self,
-        appContext: appContext
-      )
-
-      // All `JavaScriptValue` args must be preliminarly converted on the JS thread, before we jump to the function's queue.
-      arguments.value = try cast(jsValues: arguments.value, forFunction: self, appContext: appContext)
+      // Arguments must be converted on the JS thread, before we jump to another thread.
+      nativeArguments.value = try toNativeClosureArguments(converter: appContext.converter, fn: self, this: this, arguments: arguments)
     } catch let error as Exception {
       callback(.failure(error))
       return
@@ -72,24 +62,24 @@ public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType>:
     }
 
     // Switch from the synchronous context to asynchronous
-    Task { [arguments] in
-      let result: Result<Any, Exception>
+    Task { [nativeArguments] in
+      let result: Result<any JSRepresentable, Exception>
 
       do {
         // Convert arguments to the types desired by the function.
-        let finalArguments = NonisolatedUnsafeVar<[Any]>([])
+//        let finalArguments = NonisolatedUnsafeVar<[Any]>([])
 
-        if requiresMainActor {
-          try await MainActor.run {
-            finalArguments.value = try cast(arguments: arguments.value, forFunction: self, appContext: appContext)
-          }
-        } else {
-          finalArguments.value = try cast(arguments: arguments.value, forFunction: self, appContext: appContext)
+//        if requiresMainActor {
+//          try await MainActor.run {
+//            finalArguments.value = try cast(arguments: arguments.value, forFunction: self, appContext: appContext)
+//          }
+//        } else {
+//          finalArguments.value = try cast(arguments: arguments.value, forFunction: self, appContext: appContext)
+//        }
+
+        guard let argumentsTuple = try Conversions.toTuple(nativeArguments.value) as? Args else {
+          throw ArgumentConversionException()
         }
-
-        // TODO: Right now we force cast the tuple in all types of functions, but we should throw another exception here.
-        // swiftlint:disable force_cast
-        let argumentsTuple = try Conversions.toTuple(finalArguments.value) as! Args
         let returnValue = try await body(argumentsTuple)
 
         result = .success(returnValue)
@@ -101,7 +91,13 @@ public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType>:
 
       // Go back to the JS thread to execute the callback
       try appContext.runtime.schedule {
-        callback(result)
+        do {
+          callback(.success(try appContext.converter.toJS(result.get(), ~ReturnType.self)))
+        } catch let error as Exception {
+          callback(.failure(error))
+        } catch {
+          callback(.failure(UnexpectedException(error)))
+        }
       }
     }
   }
@@ -110,21 +106,23 @@ public final class ConcurrentFunctionDefinition<Args, FirstArgType, ReturnType>:
 
   @JavaScriptActor
   func build(appContext: AppContext) throws -> JavaScriptObject {
-    return try appContext.runtime.createAsyncFunction(name, argsCount: argumentsCount) { [weak appContext, self] this, args, resolve, reject in
+    return try appContext.runtime.createAsyncFunction(name) { [weak appContext, self] this, arguments, resolve, reject in
       guard let appContext else {
         let exception = Exceptions.AppContextLost()
-        return reject(exception.code, exception.description, nil)
+        reject(exception.code, exception.description, nil)
+        return .undefined
       }
-      self.call(by: this, withArguments: args, appContext: appContext) { result in
+      self.call(appContext, this: this, arguments: arguments) { result in
         switch result {
         case .failure(let error):
           reject(error.code, error.description, nil)
         case .success(let value):
           // Convert some results to primitive types (e.g. records) or JS values (e.g. shared objects)
-          let convertedResult = Conversions.convertFunctionResult(value, appContext: appContext, dynamicType: ~ReturnType.self)
-          resolve(convertedResult)
+//          let convertedResult = Conversions.convertFunctionResult(value, appContext: appContext, dynamicType: ~ReturnType.self)
+          resolve(value)
         }
       }
-    }
+      return .undefined
+    }.toObject()
   }
 }

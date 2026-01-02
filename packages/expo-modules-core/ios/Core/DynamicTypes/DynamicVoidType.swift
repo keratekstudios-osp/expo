@@ -13,7 +13,7 @@ internal struct DynamicVoidType: AnyDynamicType {
     return type is Self
   }
 
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
     return Optional<Any>.none as Any
   }
 

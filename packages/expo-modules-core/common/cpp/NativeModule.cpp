@@ -1,10 +1,10 @@
 // Copyright 2024-present 650 Industries. All rights reserved.
 
-#ifdef __APPLE__
-#include <ExpoModulesJSI/JSIUtils.h>
-#else
+//#ifdef __APPLE__
+//#include <ExpoModulesJSI/JSIUtils.h>
+//#else
 #include "JSIUtils.h"
-#endif
+//#endif
 
 #include "EventEmitter.h"
 #include "NativeModule.h"

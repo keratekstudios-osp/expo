@@ -49,6 +49,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoAsset (12.0.8):
+    - ExpoModulesCore
   - ExpoLogBox (0.0.13-canary-20251023-4c86f95):
     - React-Core
   - ExpoModulesCore (3.0.16):
@@ -1901,6 +1903,7 @@ PODS:
 DEPENDENCIES:
   - Expo (from `../../../packages/expo`)
   - Expo/Tests (from `../../../packages/expo`)
+  - ExpoAsset (from `../../../packages/expo-asset/ios`)
   - "ExpoLogBox (from `../../../packages/@expo/log-box`)"
   - ExpoModulesCore (from `../../../packages/expo-modules-core`)
   - ExpoModulesCore/Tests (from `../../../packages/expo-modules-core`)
@@ -1991,6 +1994,9 @@ EXTERNAL SOURCES:
   Expo:
     inhibit_warnings: false
     :path: "../../../packages/expo"
+  ExpoAsset:
+    inhibit_warnings: false
+    :path: "../../../packages/expo-asset/ios"
   ExpoLogBox:
     inhibit_warnings: false
     :path: "../../../packages/@expo/log-box"
@@ -2151,10 +2157,11 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Expo: 1d622e68a18e91f1860f96623a49def117f6005c
+  Expo: 01d451b186486cfcf17f2041b1ce8420298bd144
+  ExpoAsset: a82f8f39a8f015b16ba247dc8463a9a8b42dd45c
   ExpoLogBox: b4c81de3f21bbe2e9467a26455563c76c7709efb
-  ExpoModulesCore: 49899da9328b1e59b0606a117966d54fda42e114
-  ExpoModulesJSI: 9999d27ae86459da362896f4ab250ddb79135644
+  ExpoModulesCore: f03cb9094e6a76374e53484938cd11ec22fbf89a
+  ExpoModulesJSI: 2c2d3ab7f8e44d5dd1b29cd4f8e1c7e1a490f9ee
   ExpoModulesTestCore: e65555b75a4ed7dd3bcf421ad01d7748bd372c88
   FBLazyVector: 3a7ea85f6009224ad89f7daeda516f189e6b5759
   hermes-engine: e33c73080ec31b854de9f4c025d453cbcdfb10df

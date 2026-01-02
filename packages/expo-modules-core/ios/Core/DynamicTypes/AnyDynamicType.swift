@@ -22,7 +22,7 @@ public protocol AnyDynamicType: CustomStringConvertible, Sendable {
    Preliminarily casts the given JavaScriptValue to a non-JS value that the other `cast` function can handle.
    It **must** be run on the thread used by the JavaScript runtime.
    */
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any
 
   /**
    Casts the given value to the wrapped type and returns it as `Any`.
@@ -30,7 +30,7 @@ public protocol AnyDynamicType: CustomStringConvertible, Sendable {
    */
   func cast<ValueType>(_ value: ValueType, appContext: AppContext) throws -> Any
 
-  func castToJS<ValueType>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue
+  func castToJS<ValueType: JSRepresentable>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue
 
   /**
    Converts function's result to the type that can later be converted to a JS value.
@@ -41,18 +41,20 @@ public protocol AnyDynamicType: CustomStringConvertible, Sendable {
 }
 
 extension AnyDynamicType {
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
-    return jsValue.getRaw() as Any
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
+//    return jsValue.getRaw() as Any
+    fatalError()
   }
 
   func cast<ValueType>(_ value: ValueType, appContext: AppContext) throws -> Any {
     return value
   }
 
-  func castToJS<ValueType>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
+  func castToJS<ValueType: JSRepresentable>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
     // This conversion isn't the most efficient way to convert Objective-C value to JS value.
     // Better performance should be provided in dynamic type specializations.
-    return try JavaScriptValue.from(value, runtime: appContext.runtime)
+    return try JavaScriptValue.representing(value: value, in: appContext.runtime)
+//    return try JavaScriptValue.from(value, runtime: appContext.runtime)
   }
 
   func convertResult<ResultType>(_ result: ResultType, appContext: AppContext) throws -> Any {

@@ -1,8 +1,9 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
 @available(iOS 16.4, *)
-open class JSwiftRuntime {
-  internal let pointee: facebook.jsi.Runtime
+open class JavaScriptRuntime: Equatable, @unchecked Sendable {
+  // TODO: Make it internal
+  public let pointee: facebook.jsi.Runtime
   internal let scheduler: expo.RuntimeScheduler
 
   /**
@@ -23,8 +24,8 @@ open class JSwiftRuntime {
   /**
    Returns the runtime `global` object.
    */
-  public func global() -> JSwiftObject {
-    return JSwiftObject(self, pointee.global())
+  public func global() -> JavaScriptObject {
+    return JavaScriptObject(self, pointee.global())
   }
 
   // MARK: - Creating objects
@@ -32,16 +33,44 @@ open class JSwiftRuntime {
   /**
    Creates a plain JavaScript object.
    */
-  public func createObject() -> JSwiftObject {
-    return JSwiftObject(self, facebook.jsi.Object(pointee))
+  public func createObject() -> JavaScriptObject {
+    return JavaScriptObject(self, facebook.jsi.Object(pointee))
   }
 
   /**
    Creates a new JavaScript object, using the provided object as the prototype.
    Calls `Object.create(prototype)` under the hood.
    */
-  public func createObject(prototype: consuming JSwiftObject) -> JSwiftObject {
-    return JSwiftObject(self, expo.common.createObjectWithPrototype(pointee, &prototype.pointee))
+  public func createObject(prototype: consuming JavaScriptObject) -> JavaScriptObject {
+    return JavaScriptObject(self, expo.common.createObjectWithPrototype(pointee, &prototype.pointee))
+  }
+
+  /**
+   Creates a JavaScript host object with given implementations for property getter, property setter, property names getter and dealloc.
+   */
+  public func createHostObject(
+    get: @escaping (_ propertyName: String) -> JavaScriptValue,
+    set: @escaping (_ propertyName: String, _ value: consuming JavaScriptValue) -> Void,
+    getPropertyNames: @escaping () -> [String],
+    dealloc: @escaping () -> Void
+  ) -> JavaScriptObject {
+    return createObject()
+//    let hostObject = expo.HostObject.makeObject(
+//      pointee,
+//      { (propertyName: std.string) in
+//        return get(String(propertyName)).pointee
+//      },
+//      { (propertyName: std.string, value: consuming facebook.jsi.Value) in
+//        set(String(propertyName), JavaScriptValue(self, value))
+//      },
+//      {
+//        fatalError()
+//      },
+//      {
+//        dealloc()
+//      }
+//    )
+//    return JavaScriptObject(self, hostObject)
   }
 
   // MARK: - Creating functions
@@ -49,22 +78,22 @@ open class JSwiftRuntime {
   /**
    Type of the closure that is passed to the `createSyncFunction` function.
    */
-  public typealias SyncFunctionClosure = @Sendable (_ this: consuming JSwiftValue, _ arguments: JSValuesBuffer) throws -> JSwiftValue
+  public typealias SyncFunctionClosure = (_ this: consuming JavaScriptValue, _ arguments: consuming JSValuesBuffer) throws -> JavaScriptValue
 
   /**
    Creates a synchronous host function that runs the given closure when it's called.
    The value returned by the closure is synchronously returned to JS.
-   - Returns: A JavaScript function represented as a `JSwiftFunction`.
+   - Returns: A JavaScript function represented as a `JavaScriptFunction`.
    */
-  public func createSyncFunction(_ name: String, _ fn: @escaping SyncFunctionClosure) -> JSwiftFunction {
+  public func createSyncFunction(_ name: String, _ fn: @escaping SyncFunctionClosure) -> JavaScriptFunction {
     let hostFunction = expo.createHostFunction(pointee, name) { runtime, this, arguments, count in
       // Explicitly copy `this` as it's borrowed by the closure
-      let this = JSwiftValue(self, facebook.jsi.Value(runtime, this))
+      let this = JavaScriptValue(self, facebook.jsi.Value(runtime, this))
       let argumentsBuffer = JSValuesBuffer(self, start: arguments, count: count)
 
-      // Remap a buffer with `jsi.Value` to a new buffer with `JSwiftValue`
+      // Remap a buffer with `jsi.Value` to a new buffer with `JavaScriptValue`
 //      let jsiArgumentsBuffer = UnsafeMutableBufferPointer<facebook.jsi.Value>(start: UnsafeMutablePointer(mutating: arguments), count: count)
-//      let argumentsBuffer = jsiArgumentsBuffer.remap({ JSwiftValue(self, $0) })
+//      let argumentsBuffer = jsiArgumentsBuffer.remap({ JavaScriptValue(self, $0) })
 
       do {
         return try fn(this, argumentsBuffer).pointee
@@ -73,29 +102,29 @@ open class JSwiftRuntime {
         return .undefined()
       }
     }
-    return JSwiftFunction(self, hostFunction)
+    return JavaScriptFunction(self, hostFunction)
   }
 
   /**
    Closure that modules use to resolve the JavaScript promise waiting for a result.
    */
-  public typealias PromiseResolveClosure = @Sendable (_ result: Any) -> Void
+  public typealias PromiseResolveClosure = @Sendable (_ result: borrowing JavaScriptValue) -> Void
 
   /**
    Closure that modules use to reject the JavaScript promise waiting for a result.
    The error may be nil but it is preferable to pass an `NSError` object for more precise error messages.
    */
-  public typealias PromiseRejectClosure = @Sendable (_ code: String, _ message: String, _ error: inout NSError) -> Void
+  public typealias PromiseRejectClosure = @Sendable (_ code: String, _ message: String, _ error: (any Error)?) -> Void
 
   /**
    Type of the closure that is passed to the `createAsyncFunction` function.
    */
   public typealias AsyncFunctionClosure = @Sendable (
-    _ this: consuming JSwiftValue,
-    _ arguments: UnsafeBufferPointer<JSwiftValue>,
-    _ resolve: PromiseResolveClosure,
-    _ reject: PromiseRejectClosure
-  ) -> JSwiftValue
+    _ this: consuming JavaScriptValue,
+    _ arguments: consuming JSValuesBuffer,
+    _ resolve: @escaping PromiseResolveClosure,
+    _ reject: @escaping PromiseRejectClosure
+  ) throws -> JavaScriptValue
 
   /**
    Creates an asynchronous host function that runs given block when it's called.
@@ -103,7 +132,7 @@ open class JSwiftRuntime {
    succeeds and a rejecter to call whenever it fails.
    \return A JavaScript function represented as a `JavaScriptObject`.
    */
-  public func createAsyncFunction(_ name: String, _ fn: AsyncFunctionClosure) -> JSwiftFunction {
+  public func createAsyncFunction(_ name: String, _ fn: AsyncFunctionClosure) -> JavaScriptFunction {
     // TODO: Implement
     return createSyncFunction(name) { this, arguments in
 //      let promiseSetup = { (runtime: facebook.jsi.Runtime, promise: Any) in
@@ -144,9 +173,9 @@ open class JSwiftRuntime {
    Evaluates given JavaScript source code.
    */
   @discardableResult
-  public func eval(_ source: String) throws -> JSwiftValue {
+  public func eval(_ source: String) throws -> JavaScriptValue {
     let stringBuffer = expo.makeSharedStringBuffer(std.string(source))
-    return JSwiftValue(self, pointee.evaluateJavaScript(stringBuffer, std.string("<<evaluated>>")))
+    return JavaScriptValue(self, pointee.evaluateJavaScript(stringBuffer, std.string("<<evaluated>>")))
   }
 
   /**
@@ -154,7 +183,7 @@ open class JSwiftRuntime {
    */
   @available(*, deprecated, message: "Spread the array into arguments instead")
   @discardableResult
-  public func eval(_ lines: [String]) throws -> JSwiftValue {
+  public func eval(_ lines: [String]) throws -> JavaScriptValue {
     try eval(lines.joined(separator: "\n"))
   }
 
@@ -162,7 +191,13 @@ open class JSwiftRuntime {
    Evaluates the given JavaScript source code made by joining arguments with a newline separator.
    */
   @discardableResult
-  public func eval(_ lines: String...) throws -> JSwiftValue {
+  public func eval(_ lines: String...) throws -> JavaScriptValue {
     try eval(lines.joined(separator: "\n"))
+  }
+
+  // MARK: - Equatable
+
+  public static func == (lhs: JavaScriptRuntime, rhs: JavaScriptRuntime) -> Bool {
+    return lhs === rhs
   }
 }

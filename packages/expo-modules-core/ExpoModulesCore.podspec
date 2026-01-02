@@ -52,8 +52,8 @@ Pod::Spec.new do |s|
   s.homepage       = package['homepage']
   s.platforms       = {
     :ios => '16.4',
-    :osx => '11.0',
-    :tvos => '15.1'
+    :osx => '12.0',
+    :tvos => '16.4'
   }
   s.swift_version  = '6.0'
   s.source         = { git: 'https://github.com/expo/expo.git' }
@@ -79,12 +79,12 @@ Pod::Spec.new do |s|
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) EXPO_MODULES_CORE_VERSION=' + package['version'],
     'SWIFT_OBJC_INTEROP_MODE' => 'objcxx',
   }
-  # s.user_target_xcconfig = {
-  #   "HEADER_SEARCH_PATHS" => [
-  #     '"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header"',
-  #     '"$(PODS_ROOT)/Headers/Private/Yoga"', # Expo.h -> ExpoModulesCore-umbrella.h -> Fabric ViewProps.h -> Private Yoga headers
-  #   ],
-  # }
+  s.user_target_xcconfig = {
+    "HEADER_SEARCH_PATHS" => [
+      '"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header"',
+      '"$(PODS_ROOT)/Headers/Private/Yoga"', # Expo.h -> ExpoModulesCore-umbrella.h -> Fabric ViewProps.h -> Private Yoga headers
+    ],
+  }
 
   if use_hermes
     s.dependency 'hermes-engine'
@@ -105,7 +105,7 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/**/*.{h,m,mm,swift,cpp}', 'common/cpp/**/*.{h,cpp}'
   s.exclude_files = ['ios/JSI', 'ios/Tests', 'common/cpp/JSI']
   s.compiler_flags = compiler_flags
-  s.private_header_files = ['ios/**/*+Private.h', 'ios/**/Swift.h']
+  s.private_header_files = ['ios/**/*+Private.h', 'ios/**/Swift.h', 'ios/**/SwiftUIViewProps.h', 'common/**/fabric/*.h']
 
   s.test_spec 'Tests' do |test_spec|
     test_spec.dependency 'ExpoModulesTestCore'

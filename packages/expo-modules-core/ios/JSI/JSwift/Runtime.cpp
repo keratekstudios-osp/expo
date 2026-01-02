@@ -13,15 +13,15 @@ using namespace expo::jswift;
 //  printf("DUPA release\n");
 //}
 
-Runtime::Runtime(jsi::Runtime &runtime) {
-  this->runtime = std::shared_ptr<jsi::Runtime>(std::shared_ptr<jsi::Runtime>(), &runtime);
-//  this->runtime = std::shared_ptr<CxxRuntime>(std::shared_ptr<CxxRuntime>(), dynamic_cast<CxxRuntime *>(&runtime));
-}
-
-jsi::Runtime& Runtime::operator*() const {
-  return *runtime;
-}
-
-Object Runtime::createObject() const {
-  return Object(*this);
-}
+//Runtime::Runtime(jsi::Runtime &runtime) {
+//  this->runtime = std::shared_ptr<jsi::Runtime>(std::shared_ptr<jsi::Runtime>(), &runtime);
+////  this->runtime = std::shared_ptr<CxxRuntime>(std::shared_ptr<CxxRuntime>(), dynamic_cast<CxxRuntime *>(&runtime));
+//}
+//
+//jsi::Runtime& Runtime::operator*() const {
+//  return *runtime;
+//}
+//
+//Object Runtime::createObject() const {
+//  return Object(*this);
+//}

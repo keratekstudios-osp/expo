@@ -12,19 +12,7 @@ public struct MainValueConverter {
    Casts the given JavaScriptValue to a non-JS value.
    It **must** be run on the thread used by the JavaScript runtime.
    */
-  public func toNative(_ value: JavaScriptValue, _ type: AnyDynamicType) throws -> Any {
-    // Preliminary cast from JS value to a common native type.
-    guard let appContext else {
-      throw Exceptions.AppContextLost()
-    }
-    let rawValue = try type.cast(jsValue: value, appContext: appContext)
-
-    // Cast common native type to more complex types (e.g. records, convertibles, enumerables, shared objects).
-    return try type.cast(rawValue, appContext: appContext)
-  }
-
-  @available(iOS 16.4, *)
-  public func toNative(_ value: borrowing JSwiftValue, _ type: AnyDynamicType) throws -> Any {
+  public func toNative(_ value: borrowing JavaScriptValue, _ type: AnyDynamicType) throws -> Any {
     guard let appContext else {
       throw Exceptions.AppContextLost()
     }
@@ -36,14 +24,10 @@ public struct MainValueConverter {
    Casts the given JS values to non-JS values.
    It **must** be run on the thread used by the JavaScript runtime.
    */
-  public func toNative(_ values: [JavaScriptValue], _ types: [AnyDynamicType]) throws -> [Any] {
-    // While using `values.enumerated().map` sounds like a more straightforward approach,
-    // this code seems quite critical for performance and using a standard `map` performs much better.
-    var index = 0
-
-    return try values.map { value in
+  public func toNative(_ values: borrowing JSValuesBuffer, _ types: [AnyDynamicType]) throws -> [Any] {
+    return try values.map { value, index in
+      let value = values[index]
       let type = types[index]
-      index += 1
 
       do {
         return try toNative(value, type)
@@ -53,25 +37,14 @@ public struct MainValueConverter {
     }
   }
 
-  @available(iOS 16.4, *)
-  public func toNative(_ values: JSValuesBuffer, _ types: [AnyDynamicType]) throws -> [Any] {
-    var results: [Any] = []
-    results.reserveCapacity(values.count)
-
-    for index in 0..<values.count {
-      results.append(try toNative(values[index], types[index]))
-    }
-    return results
-  }
-
   /**
    Converts the given value to the type compatible with JavaScript.
    */
-  public func toJS<ValueType>(_ value: ValueType, _ type: AnyDynamicType) throws -> JavaScriptValue {
+  public func toJS(_ value: (any JSRepresentable)?, _ type: AnyDynamicType) throws -> JavaScriptValue {
     guard let appContext else {
       throw Exceptions.AppContextLost()
     }
-    let result = Conversions.convertFunctionResult(value, appContext: appContext, dynamicType: type)
+    let result = Conversions.convertFunctionResult(value, appContext: appContext, dynamicType: type) as! JSRepresentable
     return try type.castToJS(result, appContext: appContext)
   }
 }

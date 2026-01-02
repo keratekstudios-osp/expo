@@ -2,10 +2,9 @@
 
 #pragma once
 
-#ifndef RETAIN_RELEASE_JSWIFT
-#define RETAIN_RELEASE_JSWIFT
-
 #ifdef __cplusplus
+
+#import <jsi/jsi.h>
 
 #import <swift/bridging>
 //#import <stdio.h>
@@ -22,7 +21,4 @@
 //void retainRuntime(facebook::jsi::Runtime *);
 //void releaseRuntime(facebook::jsi::Runtime *);
 
-#import <jsi/jsi.h>
-
-#endif
-#endif
+#endif // __cplusplus

@@ -5,27 +5,23 @@ import ExpoModulesJSI
 /**
  A type that can decorate a `JavaScriptObject` with some properties.
  */
-internal protocol JavaScriptObjectDecorator {
+internal protocol JavaScriptObjectDecorator: ~Copyable {
   /**
    Decorates an existing `JavaScriptObject`.
    */
   @JavaScriptActor
-  func decorate(object: JavaScriptObject, appContext: AppContext) throws
+  func decorate(object: borrowing JavaScriptObject, appContext: AppContext) throws
 }
 
 /**
  A type that can build and decorate a `JavaScriptObject` based on its attributes.
  */
-internal protocol JavaScriptObjectBuilder: JavaScriptObjectDecorator {
+internal protocol JavaScriptObjectBuilder: JavaScriptObjectDecorator, ~Copyable {
   /**
    Creates a decorated `JavaScriptObject` in the given app context.
    */
   @JavaScriptActor
   func build(appContext: AppContext) throws -> JavaScriptObject
-
-  @available(iOS 16.4, *)
-  @JavaScriptActor
-  func build(appContext: AppContext) throws -> JSwiftObject
 }
 
 /**
@@ -40,14 +36,8 @@ extension JavaScriptObjectBuilder {
     return object
   }
 
-  @available(iOS 16.4, *)
   @JavaScriptActor
-  func build(appContext: AppContext) throws -> JSwiftObject {
-    fatalError()
-  }
-
-  @JavaScriptActor
-  func decorate(object: JavaScriptObject, appContext: AppContext) throws {
+  func decorate(object: borrowing JavaScriptObject, appContext: AppContext) throws {
     // no-op by default
   }
 }

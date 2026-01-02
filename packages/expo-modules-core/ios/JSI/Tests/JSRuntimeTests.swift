@@ -8,12 +8,12 @@ import Testing
 struct JSRuntimeTests {
   @Test
   func `initializes`() {
-    let _ = JSwiftRuntime()
+    let _ = JavaScriptRuntime()
   }
 
   @Test
   func `returns global object`() {
-    let global = JSwiftRuntime().global()
+    let global = JavaScriptRuntime().global()
     #expect(global.hasProperty("String") == true)
     #expect(global.hasProperty("Object") == true)
     #expect(global.hasProperty("RegExp") == true)
@@ -21,7 +21,7 @@ struct JSRuntimeTests {
 
   @Test
   func `creates object`() {
-    let object = JSwiftRuntime().createObject()
+    let object = JavaScriptRuntime().createObject()
     #expect(object.getPropertyNames().count == 0)
     #expect(object.hasProperty("hasOwnProperty") == true)
     #expect(object.toValue().isObject() == true)
@@ -29,7 +29,7 @@ struct JSRuntimeTests {
 
   @Test
   func `creates object with prototype`() {
-    let runtime = JSwiftRuntime()
+    let runtime = JavaScriptRuntime()
     let prototype = runtime.createObject()
     let function = runtime.createSyncFunction("test") { _, _ in .undefined }
     prototype.setProperty("test", function.toValue())
@@ -40,7 +40,7 @@ struct JSRuntimeTests {
 
   @Test
   func `evals`() throws {
-    let runtime = JSwiftRuntime()
+    let runtime = JavaScriptRuntime()
     let result = try runtime.eval("1 + 1")
     #expect(result.isNumber() == true)
     #expect(result.getInt() == 2)

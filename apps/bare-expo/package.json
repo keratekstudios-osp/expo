@@ -30,7 +30,6 @@
         "expo-keep-awake",
         "expo-font",
         "expo-file-system",
-        "expo-asset",
         "@expo/dom-webview",
         "expo-constants",
         "benchmarking-module"

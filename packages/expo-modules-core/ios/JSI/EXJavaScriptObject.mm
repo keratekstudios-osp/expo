@@ -75,20 +75,17 @@
 - (void)defineProperty:(nonnull NSString *)name descriptor:(nonnull EXJavaScriptObject *)descriptor
 {
   jsi::Runtime *runtime = [_runtime get];
-  jsi::Object *jsThis = _jsObjectPtr.get();
 
-  expo::common::defineProperty(*runtime, jsThis, [name UTF8String], std::move(*[descriptor get]));
+  expo::common::defineProperty(*runtime, *_jsObjectPtr, [name UTF8String], std::move(*[descriptor get]));
 }
 
 - (void)defineProperty:(nonnull NSString *)name value:(nullable id)value options:(EXJavaScriptObjectPropertyDescriptor)options
 {
   jsi::Runtime *runtime = [_runtime get];
-  jsi::Object *jsThis = _jsObjectPtr.get();
-
   jsi::Object descriptor = [self preparePropertyDescriptorWithOptions:options];
   descriptor.setProperty(*runtime, "value", expo::convertObjCObjectToJSIValue(*runtime, value));
 
-  expo::common::defineProperty(*runtime, jsThis, [name UTF8String], std::move(descriptor));
+  expo::common::defineProperty(*runtime, *_jsObjectPtr, [name UTF8String], std::move(descriptor));
 }
 
 #pragma mark - WeakObject

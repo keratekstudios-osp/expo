@@ -36,19 +36,19 @@
 //public typealias CxxObject = expo.jswift.Object
 //public typealias CxxValue = expo.jswift.Value
 
-public extension expo.jswift.Runtime {
-  func test() -> facebook.jsi.Object {
-    return facebook.jsi.Object(runtime.pointee)
-  }
-}
-
-public extension expo.jswift.Object {
-  func getProperty(_ name: String) -> expo.jswift.Value {
-    return __getProperty(name)
-  }
-  func getPropertyNames() -> [String] {
-    return __getPropertyNames().map { String($0) }
-  }
-}
-
-public extension expo.jswift.Value {}
+//public extension expo.jswift.Runtime {
+//  func test() -> facebook.jsi.Object {
+//    return facebook.jsi.Object(runtime.pointee)
+//  }
+//}
+//
+//public extension expo.jswift.Object {
+//  func getProperty(_ name: String) -> expo.jswift.Value {
+//    return __getProperty(name)
+//  }
+//  func getPropertyNames() -> [String] {
+//    return __getPropertyNames().map { String($0) }
+//  }
+//}
+//
+//public extension expo.jswift.Value {}

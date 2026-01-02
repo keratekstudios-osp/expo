@@ -23,9 +23,10 @@ internal struct DynamicArrayType: AnyDynamicType {
     return false
   }
 
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
-    let value = jsValue.getArray()
-    return try value.map { try elementType.cast(jsValue: $0, appContext: appContext) }
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
+    fatalError()
+//    let value = jsValue.getArray()
+//    return try value.map { try elementType.cast(jsValue: $0, appContext: appContext) }
   }
 
   func cast<ValueType>(_ value: ValueType, appContext: AppContext) throws -> Any {

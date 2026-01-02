@@ -3,14 +3,14 @@
 typealias jsi = facebook.jsi
 
 @available(iOS 16.4, *)
-public struct JSwiftValue: ~Copyable {
-  internal weak var runtime: JSwiftRuntime?
+public struct JavaScriptValue: JSRepresentable, Sendable, ~Copyable {
+  internal weak var runtime: JavaScriptRuntime?
   internal let pointee: facebook.jsi.Value
 
   /**
    Initializer from the existing JSI value. Keep it internal so we don't leak any C++ types into the public interface.
    */
-  internal init(_ runtime: JSwiftRuntime?, _ pointee: consuming facebook.jsi.Value) {
+  internal init(_ runtime: JavaScriptRuntime?, _ pointee: consuming facebook.jsi.Value) {
     self.runtime = runtime
     self.pointee = pointee
   }
@@ -18,7 +18,7 @@ public struct JSwiftValue: ~Copyable {
   /**
    Creates a boolean JS value.
    */
-  public init(_ runtime: JSwiftRuntime, _ bool: Bool) {
+  public init(_ runtime: JavaScriptRuntime, _ bool: Bool) {
     self.runtime = runtime
     self.pointee = facebook.jsi.Value(bool)
   }
@@ -26,7 +26,7 @@ public struct JSwiftValue: ~Copyable {
   /**
    Creates an integer JS value.
    */
-  public init(_ runtime: JSwiftRuntime, _ integer: any BinaryInteger) {
+  public init(_ runtime: JavaScriptRuntime, _ integer: any BinaryInteger) {
     self.runtime = runtime
     self.pointee = facebook.jsi.Value(Int32(integer))
   }
@@ -34,7 +34,7 @@ public struct JSwiftValue: ~Copyable {
   /**
    Creates a floating JS value.
    */
-  public init(_ runtime: JSwiftRuntime, _ float: any BinaryFloatingPoint) {
+  public init(_ runtime: JavaScriptRuntime, _ float: any BinaryFloatingPoint) {
     self.runtime = runtime
     self.pointee = facebook.jsi.Value(Double(float))
   }
@@ -42,9 +42,19 @@ public struct JSwiftValue: ~Copyable {
   /**
    Creates a JS value from a JS representable.
    */
-  public init(_ runtime: JSwiftRuntime, _ value: JSRepresentable) {
+  public init(_ runtime: JavaScriptRuntime, _ value: JSRepresentable) {
     self.runtime = runtime
     self.pointee = value.toJSIValue(in: runtime.pointee)
+  }
+
+  /**
+   Copies the value.
+   */
+  public func copy() -> JavaScriptValue {
+    guard let runtime else {
+      JS.runtimeLostFatalError()
+    }
+    return JavaScriptValue(runtime, facebook.jsi.Value(runtime.pointee, pointee))
   }
 
   public func isUndefined() -> Bool {
@@ -73,6 +83,13 @@ public struct JSwiftValue: ~Copyable {
 
   public func isObject() -> Bool {
     return pointee.isObject()
+  }
+
+  public func isArray() -> Bool {
+    guard let jsiRuntime = runtime?.pointee else {
+      JS.runtimeLostFatalError()
+    }
+    return pointee.isObject() && pointee.getObject(jsiRuntime).isArray(jsiRuntime)
   }
 
   public func isFunction() -> Bool {
@@ -108,6 +125,30 @@ public struct JSwiftValue: ~Copyable {
     return String(pointee.getString(jsiRuntime).utf8(jsiRuntime))
   }
 
+  public func getObject() -> JavaScriptObject {
+    guard let runtime else {
+      JS.runtimeLostFatalError()
+    }
+    return JavaScriptObject(runtime, pointee.getObject(runtime.pointee))
+  }
+
+  public func getFunction() -> JavaScriptFunction {
+    guard let runtime else {
+      JS.runtimeLostFatalError()
+    }
+    return JavaScriptFunction(runtime, pointee.getObject(runtime.pointee).getFunction(runtime.pointee))
+  }
+
+  public func getTypedArray() -> JavaScriptTypedArray? {
+    guard let runtime else {
+      JS.runtimeLostFatalError()
+    }
+    guard isTypedArray() else {
+      return nil
+    }
+    return JavaScriptTypedArray(runtime, expo.TypedArray(runtime.pointee, pointee.getObject(runtime.pointee)))
+  }
+
   // MARK: - Kind
 
   public enum Kind: String {
@@ -121,7 +162,7 @@ public struct JSwiftValue: ~Copyable {
     case object
   }
 
-  var kind: JavaScriptValueKind {
+  public var kind: Kind {
     // TODO: Make it a stored property, but computed on demand.
     // This feels like a better way to check value's type.
     switch true {
@@ -149,7 +190,7 @@ public struct JSwiftValue: ~Copyable {
   /**
    Tests whether two values are strictly equal, according to https://262.ecma-international.org/11.0/#sec-strict-equality-comparison
    */
-  public func isEqual(to another: borrowing JSwiftValue) -> Bool {
+  public func isEqual(to another: borrowing JavaScriptValue) -> Bool {
     if let jsiRuntime = runtime?.pointee ?? another.runtime?.pointee {
       return facebook.jsi.Value.strictEquals(jsiRuntime, pointee, another.pointee)
     }
@@ -188,27 +229,53 @@ public struct JSwiftValue: ~Copyable {
 
   // MARK: - Runtime-free initializers
 
-  public static var undefined: JSwiftValue {
-    return JSwiftValue(nil, facebook.jsi.Value.undefined())
+  public static var undefined: JavaScriptValue {
+    return JavaScriptValue(nil, facebook.jsi.Value.undefined())
   }
 
-  public static var null: JSwiftValue {
-    return JSwiftValue(nil, facebook.jsi.Value.null())
+  public static var null: JavaScriptValue {
+    return JavaScriptValue(nil, facebook.jsi.Value.null())
   }
 
-  public static var `true`: JSwiftValue {
-    return JSwiftValue(nil, facebook.jsi.Value(true))
+  public static var `true`: JavaScriptValue {
+    return JavaScriptValue(nil, facebook.jsi.Value(true))
   }
 
-  public static var `false`: JSwiftValue {
-    return JSwiftValue(nil, facebook.jsi.Value(false))
+  public static var `false`: JavaScriptValue {
+    return JavaScriptValue(nil, facebook.jsi.Value(false))
   }
 
-  public static func number(_ number: Double) -> JSwiftValue {
-    return JSwiftValue(nil, facebook.jsi.Value(number))
+  public static func number(_ number: Double) -> JavaScriptValue {
+    return JavaScriptValue(nil, facebook.jsi.Value(number))
   }
 
-  public static func representing(value: JSRepresentable, in runtime: JSwiftRuntime) -> JSwiftValue {
+  public static func representing(value: JSRepresentable, in runtime: JavaScriptRuntime) -> JavaScriptValue {
     return value.toJSValue(in: runtime)
+  }
+
+  @available(*, deprecated, renamed: "representing(value:in:)")
+  public static func from(_ value: Any, runtime: JavaScriptRuntime) -> JavaScriptValue {
+    if let value = value as? JSRepresentable {
+      return value.toJSValue(in: runtime)
+    }
+    return .undefined
+  }
+
+  // MARK: - JSRepresentable
+
+  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> JavaScriptValue {
+    fatalError("Not implemented")
+  }
+
+  public static func fromJSValue(_ value: borrowing JavaScriptValue) -> JavaScriptValue {
+    return value.copy()
+  }
+
+  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value {
+    return facebook.jsi.Value(runtime, pointee)
+  }
+
+  public func toJSValue(in runtime: JavaScriptRuntime) -> JavaScriptValue {
+    return self.copy()
   }
 }

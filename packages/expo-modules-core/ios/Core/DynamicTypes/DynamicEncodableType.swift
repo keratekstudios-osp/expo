@@ -23,24 +23,25 @@ internal struct DynamicEncodableType: AnyDynamicType {
     fatalError("DynamicEncodableType can only cast to JavaScript, not from")
   }
 
-  func castToJS<ValueType>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
-    if let value = value as? JavaScriptValue {
-      return value
-    }
-    if let value = value as? Encodable {
-      let runtime = try appContext.runtime
-      let encoder = JSValueEncoder(runtime: runtime)
-
-      try value.encode(to: encoder)
-
-      return encoder.value
-    }
+  func castToJS<ValueType: JSRepresentable>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
+//    if let value = value as? JavaScriptValue {
+//      return value
+//    }
+//    if let value = value as? Encodable {
+//      let runtime = try appContext.runtime
+//      let encoder = JSValueEncoder(runtime: runtime)
+//
+//      try value.encode(to: encoder)
+//
+//      return encoder.value
+//    }
     throw Conversions.ConversionToJSFailedException((kind: .object, nativeType: ValueType.self))
   }
 
   func convertResult<ResultType>(_ result: ResultType, appContext: AppContext) throws -> Any {
     // TODO: We should get rid of this function, but it seems it's still used in some places
-    return try castToJS(result, appContext: appContext)
+//    return try castToJS(result, appContext: appContext)
+    fatalError()
   }
 
   var description: String {

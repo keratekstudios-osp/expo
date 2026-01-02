@@ -8,34 +8,34 @@ import Testing
 struct JSValueTests {
   @Suite
   struct `isEqual(to:)` {
-    let runtime = JSwiftRuntime()
+    let runtime = JavaScriptRuntime()
 
     @Test
     func `true for itself`() {
-      let a = JSwiftValue(runtime, "str")
+      let a = JavaScriptValue(runtime, "str")
       #expect(a.isEqual(to: a) == true)
     }
 
     @Test
     func `true for equal strings`() {
-      let a = JSwiftValue(runtime, "str")
-      let b = JSwiftValue(runtime, "str")
+      let a = JavaScriptValue(runtime, "str")
+      let b = JavaScriptValue(runtime, "str")
       #expect(a.isEqual(to: b) == true)
       #expect((a == b) == true)
     }
 
     @Test
     func `false for non-equal strings`() {
-      let a = JSwiftValue(runtime, "strA")
-      let b = JSwiftValue(runtime, "strB")
+      let a = JavaScriptValue(runtime, "strA")
+      let b = JavaScriptValue(runtime, "strB")
       #expect(a.isEqual(to: b) == false)
       #expect((a != b) == true)
     }
 
     @Test
     func `null does not strictly equal undefined`() {
-      #expect(JSwiftValue.null.isEqual(to: .undefined) == false)
-      #expect((JSwiftValue.null == JSwiftValue.undefined) == false)
+      #expect(JavaScriptValue.null.isEqual(to: .undefined) == false)
+      #expect((JavaScriptValue.null == JavaScriptValue.undefined) == false)
     }
 
     @Test
@@ -56,23 +56,23 @@ struct JSValueTests {
 
   @Suite
   struct `static representing(value:in:)` {
-    let runtime = JSwiftRuntime()
+    let runtime = JavaScriptRuntime()
 
     @Test
     func `from boolean`() {
-      let value = JSwiftValue.representing(value: true, in: runtime)
+      let value = JavaScriptValue.representing(value: true, in: runtime)
       #expect(value.isBool() == true)
     }
 
     @Test
     func `from integer`() {
-      let value = JSwiftValue.representing(value: 123, in: runtime)
+      let value = JavaScriptValue.representing(value: 123, in: runtime)
       #expect(value.isNumber() == true)
     }
 
     @Test
     func `from string`() {
-      let value = JSwiftValue.representing(value: "str", in: runtime)
+      let value = JavaScriptValue.representing(value: "str", in: runtime)
       #expect(value.isString() == true)
     }
   }

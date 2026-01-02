@@ -13,7 +13,7 @@ internal struct DynamicNumberType<NumberType>: AnyDynamicType {
     return type is Self
   }
 
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
     if jsValue.kind == .number {
       if let FloatingPointType = NumberType.self as? any BinaryFloatingPoint.Type {
         return FloatingPointType.init(jsValue.getDouble())

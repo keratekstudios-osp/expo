@@ -23,7 +23,7 @@ internal struct DynamicDictionaryType: AnyDynamicType {
     return false
   }
 
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
     let converter = appContext.converter
 
     if let jsObject = try? jsValue.asObject() {
@@ -33,7 +33,7 @@ internal struct DynamicDictionaryType: AnyDynamicType {
       }
       return result
     }
-    throw Conversions.CastingException<JavaScriptObject>(jsValue)
+    throw Conversions.CastingJSValueException<[AnyHashable: Any]>(jsValue.kind)
   }
 
   func cast<ValueType>(_ value: ValueType, appContext: AppContext) throws -> Any {

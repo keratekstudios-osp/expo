@@ -14,7 +14,7 @@ protocol AnyConstantDefinition {
   func buildDescriptor(appContext: AppContext) throws -> JavaScriptObject
 }
 
-public final class ConstantDefinition<ReturnType>: AnyDefinition, AnyConstantDefinition {
+public final class ConstantDefinition<ReturnType: JSRepresentable>: AnyDefinition, AnyConstantDefinition {
   typealias ClosureType = () throws -> ReturnType
 
   /**
@@ -64,25 +64,27 @@ public final class ConstantDefinition<ReturnType>: AnyDefinition, AnyConstantDef
   /**
    Creates the JavaScript function that will be used as a getter of the constant.
    */
-  internal func buildGetter(appContext: AppContext) throws -> JavaScriptObject {
-    var prevValue: JavaScriptValue?
-    return try appContext.runtime.createSyncFunction(name, argsCount: 0) { [weak appContext, weak self, name] _, _ in
-      guard let prevValue else {
-        guard let appContext else {
-          throw Exceptions.AppContextLost()
-        }
-        guard let self else {
-          throw NativeConstantUnavailableException(name)
-        }
-        guard let getter = self.getter else {
-          throw NativeConstantWithoutGetterException(name)
-        }
-        let result = try getter()
-        let newValue = try appContext.converter.toJS(result, ~ReturnType.self)
-        prevValue = newValue
-        return newValue
+  internal func buildGetter(appContext: AppContext) throws -> JavaScriptFunction {
+    var savedValue: JavaScriptValue?
+    return try appContext.runtime.createSyncFunction(name) { [weak appContext, weak self, name] _, _ in
+      guard let appContext else {
+        throw Exceptions.AppContextLost()
       }
-      return prevValue
+      guard let self else {
+        throw NativeConstantUnavailableException(name)
+      }
+      guard let getter = self.getter else {
+        throw NativeConstantWithoutGetterException(name)
+      }
+      if let value = savedValue?.copy() {
+        return value
+      }
+      let value = try appContext.converter.toJS(try getter(), ~ReturnType.self)
+
+      // Save a copy of the value, otherwise it would be implicitly consumed
+      savedValue = value.copy()
+
+      return value
     }
   }
 
@@ -95,7 +97,7 @@ public final class ConstantDefinition<ReturnType>: AnyDefinition, AnyConstantDef
     descriptor.setProperty("enumerable", value: true)
 
     if getter != nil {
-      descriptor.setProperty("get", value: try buildGetter(appContext: appContext))
+      descriptor.setProperty("get", value: try buildGetter(appContext: appContext).toValue())
     }
     return descriptor
   }

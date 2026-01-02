@@ -3,8 +3,7 @@
 /**
  A type whose values can be represented in the JS runtime.
  */
-@available(iOS 16.4, *)
-public protocol JSRepresentable {
+public protocol JSRepresentable: Sendable, ~Copyable {
   /**
    Creates an instance of this type from the given `facebook.jsi.Value` in `facebook.jsi.Runtime`.
    */
@@ -12,7 +11,7 @@ public protocol JSRepresentable {
   /**
    Creates an instance of this type from the given JS value.
    */
-  static func fromJSValue(_ value: borrowing JSwiftValue) -> Self
+  static func fromJSValue(_ value: borrowing JavaScriptValue) -> Self
   /**
    Creates a JSI value representing this value in the given JSI runtime.
    */
@@ -20,24 +19,30 @@ public protocol JSRepresentable {
   /**
    Creates a JS value representing this value in the given runtime.
    */
-  func toJSValue(in runtime: JSwiftRuntime) -> JSwiftValue
+  func toJSValue(in runtime: JavaScriptRuntime) -> JavaScriptValue
 }
 
-@available(iOS 16.4, *)
 public extension JSRepresentable {
-  static func fromJSValue(_ value: borrowing JSwiftValue) -> Self {
+  static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Self {
+    fatalError("Unimplemented")
+  }
+
+  static func fromJSValue(_ value: borrowing JavaScriptValue) -> Self {
     guard let jsiRuntime = value.runtime else {
       JS.runtimeLostFatalError()
     }
     return fromJSIValue(value.pointee, in: jsiRuntime.pointee)
   }
 
-  func toJSValue(in runtime: JSwiftRuntime) -> JSwiftValue {
-    return JSwiftValue(runtime, toJSIValue(in: runtime.pointee))
+  func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value {
+    fatalError("Unimplemented")
+  }
+
+  func toJSValue(in runtime: JavaScriptRuntime) -> JavaScriptValue {
+    return JavaScriptValue(runtime, toJSIValue(in: runtime.pointee))
   }
 }
 
-@available(iOS 16.4, *)
 extension Bool: JSRepresentable {
   public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Bool {
     return value.getBool()
@@ -48,29 +53,41 @@ extension Bool: JSRepresentable {
   }
 }
 
-@available(iOS 16.4, *)
-extension Int: JSRepresentable {
-  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Int {
+public protocol JSRepresentableNumber: JSRepresentable {}
+
+extension JSRepresentableNumber {
+  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Int where Self: FixedWidthInteger {
     return Int(value.getNumber())
   }
 
-  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value {
-    return facebook.jsi.Value(Int32(self))
-  }
-}
-
-@available(iOS 16.4, *)
-extension Double: JSRepresentable {
-  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Double {
+  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Double where Self: BinaryFloatingPoint {
     return value.getNumber()
   }
 
-  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value {
-    return facebook.jsi.Value(self)
+  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value where Self: FixedWidthInteger {
+    return facebook.jsi.Value(Int32(self))
+  }
+
+  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value where Self: BinaryFloatingPoint {
+    return facebook.jsi.Value(Double(self))
   }
 }
 
-@available(iOS 16.4, *)
+extension Int: JSRepresentableNumber {}
+extension Int8: JSRepresentableNumber {}
+extension Int16: JSRepresentableNumber {}
+extension Int32: JSRepresentableNumber {}
+extension Int64: JSRepresentableNumber {}
+extension UInt: JSRepresentableNumber {}
+extension UInt8: JSRepresentableNumber {}
+extension UInt16: JSRepresentableNumber {}
+extension UInt32: JSRepresentableNumber {}
+extension UInt64: JSRepresentableNumber {}
+extension Float16: JSRepresentableNumber {}
+extension Float32: JSRepresentableNumber {}
+extension Float64: JSRepresentableNumber {}
+extension CGFloat: JSRepresentableNumber {}
+
 extension String: JSRepresentable {
   public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> String {
     return String(value.getString(runtime).utf8(runtime))
@@ -81,8 +98,20 @@ extension String: JSRepresentable {
   }
 }
 
-@available(iOS 16.4, *)
-extension Dictionary: JSRepresentable where Key == String, Value: JSRepresentable {
+extension Optional: JSRepresentable where Wrapped: JSRepresentable {
+  public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Self {
+    if value.isNull() || value.isUndefined() {
+      return nil
+    }
+    return Wrapped.fromJSIValue(value, in: runtime)
+  }
+
+  public func toJSIValue(in runtime: facebook.jsi.Runtime) -> facebook.jsi.Value {
+    return self?.toJSIValue(in: runtime) ?? .null()
+  }
+}
+
+extension Dictionary: JSRepresentable where Key == String {
   public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Dictionary<Key, Value> {
     let object = value.getObject(runtime)
     let propertyNames = object.getPropertyNames(runtime)
@@ -93,8 +122,8 @@ extension Dictionary: JSRepresentable where Key == String, Value: JSRepresentabl
       let jsiKey = propertyNames.getValueAtIndex(runtime, index)
       let key = String.fromJSIValue(jsiKey, in: runtime)
       let jsiValue = object.getProperty(runtime, jsiKey)
-      let value = Value.fromJSIValue(jsiValue, in: runtime)
-      result[key] = value
+//      let value = Value.fromJSIValue(jsiValue, in: runtime)
+//      result[key] = value
     }
     return result
   }
@@ -104,13 +133,17 @@ extension Dictionary: JSRepresentable where Key == String, Value: JSRepresentabl
 
     for (key, value) in self {
       let keyString = String(describing: key)
-      expo.jswift.setProperty(runtime, object, keyString, value.toJSIValue(in: runtime))
+
+      if let value = value as? JSRepresentable {
+        expo.jswift.setProperty(runtime, object, keyString, value.toJSIValue(in: runtime))
+      } else {
+        expo.jswift.setProperty(runtime, object, keyString, .null())
+      }
     }
     return facebook.jsi.Value(runtime, object)
   }
 }
 
-@available(iOS 16.4, *)
 extension Array: JSRepresentable where Element: JSRepresentable {
   public static func fromJSIValue(_ value: borrowing facebook.jsi.Value, in runtime: facebook.jsi.Runtime) -> Array<Element> {
     let jsiArray = value.getObject(runtime).getArray(runtime)

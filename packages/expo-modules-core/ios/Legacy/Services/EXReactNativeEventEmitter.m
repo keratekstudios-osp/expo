@@ -58,12 +58,6 @@ RCT_EXPORT_METHOD(addProxiedListener:(NSString *)moduleName eventName:(NSString 
 {
   [self addListener:eventName];
 
-  // Backwards compatibility for the new architecture
-  if ([_appContext hasModule:moduleName]) {
-    [_appContext modifyEventListenersCount:moduleName count:1];
-    return;
-  }
-
   // Validate module
   EXExportedModule *module = [_exModuleRegistry getExportedModuleForName:moduleName];
 
@@ -100,12 +94,6 @@ RCT_EXPORT_METHOD(addProxiedListener:(NSString *)moduleName eventName:(NSString 
 RCT_EXPORT_METHOD(removeProxiedListeners:(NSString *)moduleName count:(double)count)
 {
   [self removeListeners:count];
-
-  // Backwards compatibility for the new architecture
-  if ([_appContext hasModule:moduleName]) {
-    [_appContext modifyEventListenersCount:moduleName count:-count];
-    return;
-  }
 
   // Validate module
   EXExportedModule *module = [_exModuleRegistry getExportedModuleForName:moduleName];

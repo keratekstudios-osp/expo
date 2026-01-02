@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.homepage       = package['homepage']
   s.platforms       = {
     :ios => '16.4',
-    :osx => '11.0',
-    :tvos => '15.1'
+    :osx => '12.0',
+    :tvos => '16.4'
   }
   s.swift_version  = '6.0'
   s.source         = { git: 'https://github.com/expo/expo.git' }
@@ -28,7 +28,8 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
     'SWIFT_OBJC_INTEROP_MODE' => 'objcxx',
-    'OTHER_SWIFT_FLAGS' => "-Xfrontend -clang-header-expose-decls=has-expose-attr",
+    'OTHER_SWIFT_FLAGS' => '-Xfrontend -clang-header-expose-decls=has-expose-attr',
+    'GCC_PREPROCESSOR_DEFINITIONS' => 'EXPO_MODULES_JSI=1'
   }
 
   if use_hermes
@@ -42,7 +43,15 @@ Pod::Spec.new do |s|
 
   s.source_files = ['ios/JSI/**/*.{h,hpp,m,mm,swift,cpp}', 'common/cpp/JSI/**/*.{h,hpp,cpp}']
   s.exclude_files = ['ios/JSI/Tests']
-  s.private_header_files = ['ios/JSI/**/*+Private.h', 'ios/JSI/**/Swift.h']
+  s.private_header_files = [
+    'common/cpp/JSI/*.{h,hpp}',
+    'ios/JSI/*.{h,hpp}',
+    'ios/JSI/JSwift/*.{h,hpp}',
+  ]
+  s.public_header_files = [
+    'common/cpp/JSI/Public/*.{h,hpp}',
+    'ios/JSI/Public/*.{h,hpp}',
+  ]
 
   s.test_spec 'Tests' do |test_spec|
     # Use higher deployment targets than the module itself.

@@ -43,7 +43,7 @@ public struct EventObservingDecorator: JavaScriptObjectDecorator {
    These functions are automatically called by the `EventEmitter` implementation.
    */
   @JavaScriptActor
-  func decorate(object: JavaScriptObject, appContext: AppContext) throws {
+  func decorate(object: borrowing JavaScriptObject, appContext: AppContext) throws {
     // We need to keep track the number of observed events
     // so we can call observers not attached to any event in the right moment.
     var observingEvents: Int = 0
@@ -76,7 +76,7 @@ public struct EventObservingDecorator: JavaScriptObjectDecorator {
       }
     }
 
-    object.setProperty(startObserving.name, value: try startObserving.build(appContext: appContext))
-    object.setProperty(stopObserving.name, value: try stopObserving.build(appContext: appContext))
+    object.setProperty(startObserving.name, value: try startObserving.build(appContext: appContext).toValue())
+    object.setProperty(stopObserving.name, value: try stopObserving.build(appContext: appContext).toValue())
   }
 }

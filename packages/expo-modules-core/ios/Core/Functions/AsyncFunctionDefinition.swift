@@ -64,30 +64,30 @@ public class AsyncFunctionDefinition<Args, FirstArgType, ReturnType>: AnyAsyncFu
 
   var takesOwner: Bool = false
 
-  func call(
-    by owner: AnyObject?,
-    withArguments args: [Any],
-    appContext: AppContext,
-    callback: @Sendable @escaping (FunctionCallResult) -> ()
-  ) {
+  func call(_ appContext: AppContext, this: borrowing JavaScriptValue, arguments: consuming JSValuesBuffer, callback: @Sendable @escaping (consuming FunctionCallResult) -> Void) {
     let promise = Promise(appContext: appContext) { value in
-      callback(.success(Conversions.convertFunctionResult(value, appContext: appContext, dynamicType: ~ReturnType.self)))
+      do {
+        let jsValue = try appContext.converter.toJS(value, ~ReturnType.self)
+        callback(.success(jsValue))
+      } catch let error as Exception {
+        callback(.failure(error))
+      } catch {
+        callback(.failure(UnexpectedException(error)))
+      }
     } rejecter: { exception in
       callback(.failure(exception))
     }
-    var arguments: [Any] = concat(
-      arguments: args,
-      withOwner: owner,
-      withPromise: takesPromise ? promise : nil,
-      forFunction: self,
-      appContext: appContext
-    )
+    var nativeArguments: [Any]
 
     do {
-      try validateArgumentsNumber(function: self, received: args.count)
+      try validateArgumentsNumber(function: self, received: arguments.count)
 
-      // All `JavaScriptValue` args must be preliminarly converted on the JS thread, so before we jump to the function's queue.
-      arguments = try cast(jsValues: arguments, forFunction: self, appContext: appContext)
+      // Arguments must be converted on the JS thread, before we jump to another thread.
+      nativeArguments = try toNativeClosureArguments(converter: appContext.converter, fn: self, this: this, arguments: arguments)
+
+      if takesPromise {
+        nativeArguments.append(promise)
+      }
     } catch let error as Exception {
       callback(.failure(error))
       return
@@ -98,16 +98,13 @@ public class AsyncFunctionDefinition<Args, FirstArgType, ReturnType>: AnyAsyncFu
 
     let queue = queue ?? defaultQueue
 
-    dispatchOnQueueUntilViewRegisters(appContext: appContext, arguments: arguments, queue: queue) { [body, name] in
+    dispatchOnQueueUntilViewRegisters(appContext: appContext, arguments: nativeArguments, queue: queue) { [body, name] in
       let returnedValue: ReturnType?
 
       do {
-        // Convert arguments to the types desired by the function.
-        arguments = try cast(arguments: arguments, forFunction: self, appContext: appContext)
-
-        // swiftlint:disable:next force_cast
-        let argumentsTuple = try Conversions.toTuple(arguments) as! Args
-
+        guard let argumentsTuple = try Conversions.toTuple(nativeArguments) as? Args else {
+          throw ArgumentConversionException()
+        }
         returnedValue = try body(argumentsTuple)
       } catch let error as Exception {
         promise.reject(FunctionCallException(name).causedBy(error))
@@ -164,8 +161,13 @@ public class AsyncFunctionDefinition<Args, FirstArgType, ReturnType>: AnyAsyncFu
     // It seems to be safe to capture a strong reference to `self` here. This is needed for detached functions, that are not part of the module definition.
     // Module definitions are held in memory anyway, but detached definitions (returned by other functions) are not, so we need to capture them here.
     // It will be deallocated when that JS host function is garbage-collected by the JS VM.
-    return try appContext.runtime.createAsyncFunction(name, argsCount: argumentsCount) { [self] this, args, resolve, reject in
-      self.call(by: this, withArguments: args, appContext: appContext) { result in
+    return try appContext.runtime.createAsyncFunction(name) { [weak appContext, self] this, arguments, resolve, reject in
+      guard let appContext else {
+        let exception = Exceptions.AppContextLost()
+        reject(exception.code, exception.description, nil)
+        return .undefined
+      }
+      self.call(appContext, this: this, arguments: arguments) { result in
         switch result {
         case .failure(let error):
           reject(error.code, error.description, nil)
@@ -173,7 +175,8 @@ public class AsyncFunctionDefinition<Args, FirstArgType, ReturnType>: AnyAsyncFu
           resolve(value)
         }
       }
-    }
+      return .undefined
+    }.toObject()
   }
 
   // MARK: - AnyAsyncFunctionDefinition

@@ -74,7 +74,7 @@ public final class ModuleDefinition: ObjectDefinition {
   @JavaScriptActor
   public override func build(appContext: AppContext) throws -> JavaScriptObject {
     // Create an instance of `global.expo.NativeModule`
-    let object = JSUtils.createNativeModuleObject(try appContext.runtime)
+    var object = try appContext.runtime.createNativeModuleObject()
 
     try super.decorate(object: object, appContext: appContext)
 
@@ -82,7 +82,7 @@ public final class ModuleDefinition: ObjectDefinition {
 
     try views.forEach { key, view in
       let reactComponentPrototype = try view.createReactComponentPrototype(appContext: appContext)
-      viewPrototypesObject.setProperty(key == DEFAULT_MODULE_VIEW ? name : "\(name)_\(view.name)", value: reactComponentPrototype)
+      viewPrototypesObject.setProperty(key == DEFAULT_MODULE_VIEW ? name : "\(name)_\(view.name)", value: reactComponentPrototype.toValue())
     }
 
     if !eventObservers.isEmpty {
@@ -90,7 +90,7 @@ public final class ModuleDefinition: ObjectDefinition {
         .decorate(object: object, appContext: appContext)
     }
 
-    object.setProperty("ViewPrototypes", value: viewPrototypesObject)
+    object.setProperty("ViewPrototypes", value: viewPrototypesObject.toValue())
     // Give the module object a name. It's used for compatibility reasons, see `EventEmitter.ts`.
     object.defineProperty("__expo_module_name__", value: name, options: [])
 

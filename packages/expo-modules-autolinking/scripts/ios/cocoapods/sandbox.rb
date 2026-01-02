@@ -31,7 +31,7 @@ module Pod
         spec_json['pod_target_xcconfig'] ||= {}
         spec_json['pod_target_xcconfig']['OTHER_SWIFT_FLAGS'] ||= ''
         spec_json['pod_target_xcconfig']['OTHER_SWIFT_FLAGS'] << ' -Xfrontend -clang-header-expose-decls=has-expose-attr'
-        # spec_json['pod_target_xcconfig']['SWIFT_OBJC_INTEROP_MODE'] ||= 'objcxx'
+        spec_json['pod_target_xcconfig']['SWIFT_OBJC_INTEROP_MODE'] ||= 'objcxx'
         # spec_json['pod_target_xcconfig']['HEADER_SEARCH_PATHS'] ||= []
         # spec_json['pod_target_xcconfig']['HEADER_SEARCH_PATHS'] << '"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header"'
         # print spec_json

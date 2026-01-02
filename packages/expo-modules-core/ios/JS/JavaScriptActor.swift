@@ -24,7 +24,7 @@ public actor JavaScriptActor: GlobalActor {
 
    See https://stackoverflow.com/a/79346971 for more information about the implementation.
    */
-  public static func assumeIsolated<T>(_ operation: @JavaScriptActor () throws -> T) rethrows -> T {
+  public static func assumeIsolated<T: ~Copyable>(_ operation: @JavaScriptActor () throws -> T) rethrows -> T {
     typealias YesActor = @JavaScriptActor () throws -> T
     typealias NoActor = () throws -> T
 

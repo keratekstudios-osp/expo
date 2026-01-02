@@ -2,10 +2,10 @@
 
 @available(iOS 16.4, *)
 public struct JS {
-  public typealias Runtime = JSwiftRuntime
-  public typealias Value = JSwiftValue
-  public typealias Object = JSwiftObject
-  public typealias Function = JSwiftFunction
+  public typealias Runtime = JavaScriptRuntime
+  public typealias Value = JavaScriptValue
+  public typealias Object = JavaScriptObject
+  public typealias Function = JavaScriptFunction
 
   public static func runtimeLostFatalError() -> Never {
     fatalError("The JavaScript runtime has been deallocated")

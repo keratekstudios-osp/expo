@@ -65,22 +65,16 @@ public final class AppContext: NSObject, @unchecked Sendable {
   /**
    Underlying JSI runtime of the running app.
    */
-  @objc
   public var _runtime: ExpoRuntime? {
     didSet {
       if _runtime == nil {
-        JavaScriptActor.assumeIsolated {
-          // When the runtime is unpinned from the context (e.g. deallocated),
-          // we should make sure to release all JS objects from the memory.
-          // Otherwise the JSCRuntime asserts may fail on deallocation.
-          releaseRuntimeObjects()
-        }
+        destroy()
       } else if _runtime != oldValue {
         JavaScriptActor.assumeIsolated {
-          if #available(iOS 16.4, *) {
-            // Create a new Swift/C++ runtime to use it whenever possible
-            _sxxRuntime = JS.Runtime(_runtime!.get())
-          }
+//          if #available(iOS 16.4, *) {
+//            // Create a new Swift/C++ runtime to use it whenever possible
+//            _sxxRuntime = JS.Runtime(_runtime!.get())
+//          }
 
           // Try to install the core object automatically when the runtime changes.
           try? prepareRuntime()
@@ -195,7 +189,7 @@ public final class AppContext: NSObject, @unchecked Sendable {
    - Warning: This is deprecated, use `appContext.runtime.schedule` instead.
    */
   @available(*, deprecated, renamed: "runtime.schedule")
-  public func executeOnJavaScriptThread(_ closure: @JavaScriptActor @escaping () -> Void) {
+  public func executeOnJavaScriptThread(_ closure: @escaping () -> Void) {
     _runtime?.schedule(closure)
   }
 
@@ -219,7 +213,7 @@ public final class AppContext: NSObject, @unchecked Sendable {
       throw JavaScriptClassNotFoundException()
     }
     let prototype = try jsClass.getProperty("prototype").asObject()
-    let object = try runtime.createObject(withPrototype: prototype)
+    let object = try runtime.createObject(prototype: prototype)
 
     return object
   }
@@ -358,9 +352,9 @@ public final class AppContext: NSObject, @unchecked Sendable {
    When remote debugging is enabled, this will always return `nil`.
    */
   @JavaScriptActor
-  @objc
   public func getNativeModuleObject(_ moduleName: String) -> JavaScriptObject? {
-    return moduleRegistry.get(moduleHolderForName: moduleName)?.javaScriptObject
+    return nil
+//    return moduleRegistry.get(moduleHolderForName: moduleName)?.javaScriptObject
   }
 
   /**
@@ -374,17 +368,6 @@ public final class AppContext: NSObject, @unchecked Sendable {
   }
 
   /**
-   Modifies listeners count for module with given name. Depending on the listeners count,
-   `onStartObserving` and `onStopObserving` are called.
-   */
-  @objc
-  public func modifyEventListenersCount(_ moduleName: String, count: Int) {
-    moduleRegistry
-      .get(moduleHolderForName: moduleName)?
-      .modifyListenersCount(count)
-  }
-
-  /**
    Asynchronously calls module's function with given arguments.
    */
   @objc
@@ -395,16 +378,16 @@ public final class AppContext: NSObject, @unchecked Sendable {
     resolve: @escaping EXPromiseResolveBlock,
     reject: @escaping EXPromiseRejectBlock
   ) {
-    moduleRegistry
-      .get(moduleHolderForName: moduleName)?
-      .call(function: functionName, args: args) { result in
-        switch result {
-        case .failure(let error):
-          reject(error.code, error.description, error)
-        case .success(let value):
-          resolve(value)
-        }
-      }
+//    moduleRegistry
+//      .get(moduleHolderForName: moduleName)?
+//      .call(function: functionName, args: args) { result in
+//        switch result {
+//        case .failure(let error):
+//          reject(error.code, error.description, error)
+//        case .success(let value):
+//          resolve(value)
+//        }
+//      }
   }
 
   @objc
@@ -495,153 +478,19 @@ public final class AppContext: NSObject, @unchecked Sendable {
 
   // MARK: - Runtime
 
-  @available(iOS 16.4, *)
-  func testCxx() throws {
-    let runtime = try runtime
-    let sxxRuntime = try sxxRuntime
-    let object = runtime.createObject()
-
-    func measure(_ name: String, _ body: () -> Void) {
-      let start = CACurrentMediaTime()
-      for _ in 0..<100_000 {
-        body()
-      }
-      let end = CACurrentMediaTime()
-      print("\(name): \(end - start)")
-    }
-
-    var newRuntime = expo.jswift.Runtime(runtime.get())
-    var newObject = newRuntime.createObject()
-    var sxxObject = sxxRuntime.createObject()
-
-    let obj = newRuntime.test()
-
-    // runtime.createObject
-    measure("[Obj] Runtime.createObject") {
-      runtime.createObject()
-    }
-    measure("[C++] Runtime.createObject") {
-      newRuntime.createObject()
-    }
-    measure("[Sxx] Runtime.createObject") {
-      sxxRuntime.createObject()
-    }
-
-    // setProperty
-    measure("[Obj] Object.setProperty") {
-      object.setProperty("test", value: 21.37)
-    }
-    measure("[C++] Object.setProperty") {
-      newObject.setProperty("test", 21.37)
-    }
-    measure("[Sxx] Object.setProperty") {
-      sxxObject.setProperty("test", 21.37)
-    }
-
-    // hasProperty
-    measure("[Obj] Object.hasProperty") {
-      object.hasProperty("test")
-    }
-    measure("[C++] Object.hasProperty") {
-      newObject.hasProperty("test")
-    }
-    measure("[Sxx] Object.hasProperty") {
-      sxxObject.hasProperty("test")
-    }
-
-    // getProperty
-    measure("[Obj] Object.getProperty") {
-      object.getProperty("test")
-    }
-    measure("[C++] Object.getProperty") {
-      newObject.getProperty("test")
-    }
-    measure("[Sxx] Object.getProperty") {
-      sxxObject.getProperty("test")
-    }
-
-    // getPropertyNames
-    measure("[Obj] Object.getPropertyNames") {
-      object.getPropertyNames()
-    }
-    measure("[C++] Object.getPropertyNames") {
-      newObject.getPropertyNames()
-    }
-    measure("[Sxx] Object.getPropertyNames") {
-      sxxObject.getPropertyNames()
-    }
-
-    measure("[Obj] Object.defineProperty") {
-      object.defineProperty("defined", value: nil, options: .configurable)
-    }
-//    measure("[C++] defineProperty") {
-//      newObject.defineProperty("defined", nil)
-//    }
-    measure("[Sxx] Object.defineProperty") {
-      sxxObject.defineProperty("defined", descriptor: .init(
-        configurable: true
-      ))
-    }
-
-    // createSyncFunction
-    measure("[Obj] Runtime.createSyncFunction") {
-      let _ = runtime.createSyncFunction("function") { this, arguments in
-        return .undefined
-      }
-    }
-    measure("[Sxx] Runtime.createSyncFunction") {
-      let _ = sxxRuntime.createSyncFunction("function") { this, arguments in
-        return .undefined
-      }
-    }
-
-    let objcFunction = runtime.createSyncFunction("test") { this, arguments in
-      print(arguments[0].getDouble(), arguments[1].getDouble())
-      return .undefined
-    }
-    let sxxFunction = sxxRuntime.createSyncFunction("test") { this, arguments in
-      return .undefined
-    }
-    measure("[Sxx] Sync function call") {
-      sxxFunction.call(arguments: 21, 37)
-    }
-
-    measure("[Obj] String -> JS value") {
-      JavaScriptValue.from("test", runtime: runtime)
-    }
-    measure("[C++] String -> JS value") {
-      expo.jswift.Value(&newRuntime, std.string("test"))
-    }
-    measure("[Sxx] String -> JS value") {
-      JSwiftValue(sxxRuntime, "test")
-    }
-
-    measure("[Obj] Dictionary -> JS object") {
-      JavaScriptValue.from(["key": "value"], runtime: runtime).getObject()
-    }
-    measure("[Sxx] Dictionary -> JS object") {
-      JSwiftObject(sxxRuntime, ["key": "value"])
-    }
-
-//    let strValue = expo.jswift.Value(&newRuntime, "test")
-//    let boolValue = expo.jswift.Value(&newRuntime, true)
-//    let doubleValue = expo.jswift.Value(&newRuntime, 21.37)
-//
-//    print("strValue:", strValue.getString())
-//    print("boolValue:", boolValue.getBool())
-//    print("doubleValue:", doubleValue.getDouble())
-  }
+//  @objc
+//  public func setRuntime(_ runtime: EXRuntime) {
+//    _runtime = ExpoRuntime(runtime.get())
+//  }
 
   @JavaScriptActor
   internal func prepareRuntime() throws {
-    if #available(iOS 16.4, *) {
-      try? testCxx()
-    }
-
     let runtime = try runtime
     let coreObject = runtime.createObject()
 
-    coreObject.defineProperty("__expo_app_identifier__", value: appIdentifier, options: [])
+    if let appIdentifier {
+      coreObject.defineProperty("__expo_app_identifier__", value: appIdentifier)
+    }
 
     try coreModuleHolder.definition.decorate(object: coreObject, appContext: self)
 
@@ -649,21 +498,42 @@ public final class AppContext: NSObject, @unchecked Sendable {
     try runtime.initializeCoreObject(coreObject)
 
     // Install `global.expo.EventEmitter`.
-    EXJavaScriptRuntimeManager.installEventEmitterClass(runtime)
+//    EXJavaScriptRuntimeManager.installEventEmitterClass(runtime)
 
     // Install `global.expo.SharedObject`.
-    EXJavaScriptRuntimeManager.installSharedObjectClass(runtime) { [weak sharedObjectRegistry] objectId in
-      sharedObjectRegistry?.delete(objectId)
-    }
-    
+//    EXJavaScriptRuntimeManager.installSharedObjectClass(runtime) { [weak sharedObjectRegistry] objectId in
+//      sharedObjectRegistry?.delete(objectId)
+//    }
+
     // Install `global.expo.SharedRef`.
-    EXJavaScriptRuntimeManager.installSharedRefClass(runtime)
+//    EXJavaScriptRuntimeManager.installSharedRefClass(runtime)
 
     // Install `global.expo.NativeModule`.
-    EXJavaScriptRuntimeManager.installNativeModuleClass(runtime)
+//    EXJavaScriptRuntimeManager.installNativeModuleClass(runtime)
 
     // Install the modules host object as the `global.expo.modules`.
-    EXJavaScriptRuntimeManager.installExpoModulesHostObject(self)
+    try installExpoModulesHostObject()
+//    EXJavaScriptRuntimeManager.installExpoModulesHostObject(self)
+  }
+
+  @JavaScriptActor
+  internal func installExpoModulesHostObject() throws {
+    let runtime = try runtime
+    let coreObject = try runtime.getCoreObject()
+
+    if coreObject.hasProperty("modules") {
+      // Host object already installed
+      return
+    }
+    let modulesHostObject = runtime.createHostObject(
+      get: { propertyName in
+        return .undefined
+      },
+      set: { propertyName, value in},
+      getPropertyNames: { [] },
+      dealloc: {}
+    )
+    coreObject.defineProperty("modules", value: modulesHostObject.toValue(), options: [.enumerable])
   }
 
   /**
@@ -680,6 +550,16 @@ public final class AppContext: NSObject, @unchecked Sendable {
   }
 
   // MARK: - Deallocation
+
+  @objc
+  public func destroy() {
+    JavaScriptActor.assumeIsolated {
+      // When the runtime is unpinned from the context (e.g. deallocated),
+      // we should make sure to release all JS objects from the memory.
+      // Otherwise the JSCRuntime asserts may fail on deallocation.
+      releaseRuntimeObjects()
+    }
+  }
 
   /**
    Cleans things up before deallocation.

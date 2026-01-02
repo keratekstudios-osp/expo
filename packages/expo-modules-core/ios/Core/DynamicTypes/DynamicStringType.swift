@@ -20,16 +20,16 @@ internal struct DynamicStringType: AnyDynamicType {
     throw Conversions.CastingException<String>(value)
   }
 
-  func cast(jsValue: JavaScriptValue, appContext: AppContext) throws -> Any {
+  func cast(jsValue: borrowing JavaScriptValue, appContext: AppContext) throws -> Any {
     if jsValue.kind == .string {
       return jsValue.getString()
     }
     throw Conversions.ConversionToNativeFailedException((kind: jsValue.kind, nativeType: String.self))
   }
 
-  func castToJS<ValueType>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
+  func castToJS<ValueType: JSRepresentable>(_ value: ValueType, appContext: AppContext) throws -> JavaScriptValue {
     if let string = value as? String {
-      return .string(string, runtime: try appContext.runtime)
+      return .representing(value: string, in: try appContext.runtime)
     }
     throw Conversions.ConversionToJSFailedException((kind: .string, nativeType: ValueType.self))
   }
