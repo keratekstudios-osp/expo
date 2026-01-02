@@ -26,3 +26,24 @@
 }
 
 @end
+
+@implementation EXRuntimeWrapper {
+  facebook::jsi::Runtime *_runtime;
+}
+
+- (instancetype)initWithRuntime:(facebook::jsi::Runtime &)runtime
+{
+  if (self = [super init]) {
+    _runtime = &runtime;
+  }
+  return self;
+}
+
+- (facebook::jsi::Runtime &)pull
+{
+  facebook::jsi::Runtime &runtime = *_runtime;
+  _runtime = nullptr;
+  return runtime;
+}
+
+@end

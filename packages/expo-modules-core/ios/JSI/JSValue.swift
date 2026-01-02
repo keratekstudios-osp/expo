@@ -1,18 +1,23 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
-typealias jsi = facebook.jsi
-
-@available(iOS 16.4, *)
 public struct JavaScriptValue: JSRepresentable, Sendable, ~Copyable {
   internal weak var runtime: JavaScriptRuntime?
   internal let pointee: facebook.jsi.Value
 
   /**
-   Initializer from the existing JSI value. Keep it internal so we don't leak any C++ types into the public interface.
+   Initializer from the existing JSI value.
    */
   internal init(_ runtime: JavaScriptRuntime?, _ pointee: consuming facebook.jsi.Value) {
     self.runtime = runtime
     self.pointee = pointee
+  }
+
+  /**
+   Copy initializer from the existing JSI value.
+   */
+  internal init(_ runtime: JavaScriptRuntime, _ pointee: borrowing facebook.jsi.Value) {
+    self.runtime = runtime
+    self.pointee = facebook.jsi.Value(runtime.pointee, pointee)
   }
 
   /**

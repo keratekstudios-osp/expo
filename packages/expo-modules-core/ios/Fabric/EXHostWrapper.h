@@ -4,6 +4,7 @@
 
 #ifdef __cplusplus
 #import <ReactCommon/RCTHost.h>
+#import <jsi/jsi.h>
 #endif
 
 /**
@@ -20,3 +21,9 @@ NS_SWIFT_NAME(ExpoHostWrapper)
 
 @end
 
+@interface EXRuntimeWrapper : NSObject
+#ifdef __cplusplus
+- (nonnull instancetype)initWithRuntime:(facebook::jsi::Runtime &)runtime;
+- (facebook::jsi::Runtime &)pull;
+#endif // __cplusplus
+@end

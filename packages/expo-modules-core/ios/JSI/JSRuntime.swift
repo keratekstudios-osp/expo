@@ -1,6 +1,5 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
-@available(iOS 16.4, *)
 open class JavaScriptRuntime: Equatable, @unchecked Sendable {
   // TODO: Make it internal
   public let pointee: facebook.jsi.Runtime
@@ -49,28 +48,29 @@ open class JavaScriptRuntime: Equatable, @unchecked Sendable {
    Creates a JavaScript host object with given implementations for property getter, property setter, property names getter and dealloc.
    */
   public func createHostObject(
-    get: @escaping (_ propertyName: String) -> JavaScriptValue,
-    set: @escaping (_ propertyName: String, _ value: consuming JavaScriptValue) -> Void,
+    get: @Sendable @escaping (_ propertyName: String) -> JavaScriptValue,
+    set: @Sendable @escaping (_ propertyName: String, _ value: consuming JavaScriptValue) -> Void,
     getPropertyNames: @escaping () -> [String],
     dealloc: @escaping () -> Void
   ) -> JavaScriptObject {
-    return createObject()
-//    let hostObject = expo.HostObject.makeObject(
-//      pointee,
-//      { (propertyName: std.string) in
+//    return JavaScriptHostObject(self, get: get, set: set, getPropertyNames: getPropertyNames, dealloc: dealloc)
+    let hostObject = expo.HostObject.makeObject(
+      pointee,
+      { (propertyName: std.string) -> facebook.jsi.Value in
+        return .undefined()
 //        return get(String(propertyName)).pointee
-//      },
-//      { (propertyName: std.string, value: consuming facebook.jsi.Value) in
-//        set(String(propertyName), JavaScriptValue(self, value))
-//      },
-//      {
-//        fatalError()
-//      },
-//      {
-//        dealloc()
-//      }
-//    )
-//    return JavaScriptObject(self, hostObject)
+      },
+      { (propertyName: std.string, value: borrowing facebook.jsi.Value) in
+        set(String(propertyName), JavaScriptValue(self, value))
+      },
+      {
+        return []
+      },
+      {
+        dealloc()
+      }
+    )
+    return JavaScriptObject(self, hostObject)
   }
 
   // MARK: - Creating functions

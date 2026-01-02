@@ -10,7 +10,7 @@ namespace jsi = facebook::jsi;
 
 namespace expo {
 
-class HostObject : public jsi::HostObject {
+class JSI_EXPORT HostObject : public jsi::HostObject {
 public:
   using GetFunction = jsi::Value(^)(std::string name);
   using SetFunction = void(^)(std::string name, const jsi::Value &value);
@@ -21,19 +21,19 @@ public:
 
   virtual ~HostObject();
 
-  jsi::Value get(jsi::Runtime &, const jsi::PropNameID &name) override;
+  jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override;
 
-  void set(jsi::Runtime &, const jsi::PropNameID &name, const jsi::Value &value) override;
+  void set(jsi::Runtime &runtime, const jsi::PropNameID &name, const jsi::Value &value) override;
 
-  std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &rt) override;
+  std::vector<jsi::PropNameID> getPropertyNames(jsi::Runtime &runtime) override;
 
-  static const jsi::Object makeObject(jsi::Runtime &runtime, GetFunction get, SetFunction set, GetPropertyNamesFunction getPropertyNames, DeallocFunction dealloc);
+  static jsi::Object makeObject(jsi::Runtime &runtime, GetFunction get, SetFunction set, GetPropertyNamesFunction getPropertyNames, DeallocFunction dealloc);
 
 private:
-  GetFunction _get;
-  SetFunction _set;
-  GetPropertyNamesFunction _getPropertyNames;
-  DeallocFunction _dealloc;
+  const GetFunction _get;
+  const SetFunction _set;
+  const GetPropertyNamesFunction _getPropertyNames;
+  const DeallocFunction _dealloc;
 }; // class HostObject
 
 } // namespace expo

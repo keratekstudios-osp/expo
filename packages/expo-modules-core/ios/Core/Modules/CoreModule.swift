@@ -26,6 +26,13 @@ internal final class CoreModule: Module {
       FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
     }
 
+    Function("addNumbers") { (a: Double, b: Double) in
+      return a + b
+    }
+    Function("addStrings") { (a: String, b: String) in
+      return a + b
+    }
+
     // Expose some common classes and maybe even the `modules` host object in the future.
     Function("uuidv4") { () -> String in
       return UUID().uuidString.lowercased()

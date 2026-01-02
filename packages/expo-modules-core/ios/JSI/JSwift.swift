@@ -1,6 +1,5 @@
 // Copyright 2025-present 650 Industries. All rights reserved.
 
-@available(iOS 16.4, *)
 public struct JS {
   public typealias Runtime = JavaScriptRuntime
   public typealias Value = JavaScriptValue

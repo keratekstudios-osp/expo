@@ -21,7 +21,7 @@ NativeState::~NativeState() {
 
 #pragma mark - Utils
 
-void installBaseClass(jsi::Runtime &runtime, const ObjectReleaser& releaser) {
+void installBaseClass(jsi::Runtime &runtime, const ObjectReleaser releaser) {
   jsi::Function baseClass = EventEmitter::getClass(runtime);
   jsi::Function klass = expo::common::createInheritingClass(runtime, "SharedObject", baseClass);
   jsi::Object prototype = klass.getPropertyAsObject(runtime, "prototype");

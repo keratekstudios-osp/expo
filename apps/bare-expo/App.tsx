@@ -90,7 +90,28 @@ import { Text } from 'react-native';
 
 //   return <ThemeProvider>{isLoaded ? <MainNavigator /> : null}</ThemeProvider>;
 // }
+console.log(Object.keys(globalThis.expo));
+
+const expo = globalThis.expo;
+{
+  const startTime = performance.now();
+  for (let i = 0; i < 100_000; i++) {
+    expo.addNumbers(21, 37);
+  }
+  const endTime = performance.now();
+  console.log(`addNumbers: ${endTime - startTime}s`);
+  // addNumbers: 262.29983282089233s
+}
+{
+  const startTime = performance.now();
+  for (let i = 0; i < 100_000; i++) {
+    expo.addStrings('hello', 'world');
+  }
+  const endTime = performance.now();
+  console.log(`addStrings: ${endTime - startTime}s`);
+  // addStrings: 275.50020837783813s
+}
 
 export default function App() {
-  return <Text>Czesc</Text>;
+  return <Text style={{ marginTop: 100, color: 'white' }}>Czesc</Text>;
 }

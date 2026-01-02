@@ -6,9 +6,9 @@ public struct JavaScriptHostObject: ~Copyable {
   public typealias GetPropertyNamesClosure = () -> [String]
   public typealias DeallocClosure = () -> Void
 
-//  internal weak var runtime: JavaScriptRuntime?
-//  internal let pointee: expo.HostObject
-//
+  internal weak var runtime: JavaScriptRuntime?
+  internal let pointee: expo.HostObject
+
 //  public init(
 //    _ runtime: JavaScriptRuntime,
 //    get: @escaping GetClosure,
@@ -21,7 +21,7 @@ public struct JavaScriptHostObject: ~Copyable {
 //      { (propertyName: std.string) in
 //        return get(String(propertyName)).pointee
 //      },
-//      { (propertyName: std.string, value: consuming facebook.jsi.Value) in
+//      { (propertyName: std.string, value: borrowing facebook.jsi.Value) in
 //        set(String(propertyName), JavaScriptValue(runtime, value))
 //      },
 //      {

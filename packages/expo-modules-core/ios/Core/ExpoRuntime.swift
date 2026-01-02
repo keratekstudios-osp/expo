@@ -8,11 +8,6 @@ import ExpoModulesJSI
  */
 public class ExpoRuntime: JavaScriptRuntime, @unchecked Sendable {
   @JavaScriptActor
-  internal func initializeCoreObject(_ coreObject: borrowing JavaScriptObject) throws {
-    global().defineProperty(EXGlobalCoreObjectPropertyName, value: coreObject, options: [.enumerable])
-  }
-
-  @JavaScriptActor
   internal func getCoreObject() throws -> JavaScriptObject {
     return try global().getProperty(EXGlobalCoreObjectPropertyName).asObject()
   }

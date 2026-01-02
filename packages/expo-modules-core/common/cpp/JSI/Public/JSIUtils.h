@@ -3,7 +3,8 @@
 #pragma once
 #ifdef __cplusplus
 
-#include "jsi.h"
+//#include "jsi.h"
+#import <jsi/jsi.h>
 
 namespace jsi = facebook::jsi;
 

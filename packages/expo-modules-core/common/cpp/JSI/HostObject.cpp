@@ -5,14 +5,16 @@
 namespace expo {
 
 HostObject::HostObject(GetFunction get, SetFunction set, GetPropertyNamesFunction getPropertyNames, DeallocFunction dealloc)
-: _get(get), _set(set), _getPropertyNames(getPropertyNames), _dealloc(dealloc) {}
+  : jsi::HostObject(), _get(std::move(get)), _set(set), _getPropertyNames(getPropertyNames), _dealloc(dealloc) {}
 
 HostObject::~HostObject() {
   _dealloc();
 }
 
 jsi::Value HostObject::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
-  return _get(name.utf8(runtime));
+  auto str = name.utf8(runtime);
+  return jsi::Value();
+//  return _get(str);
 }
 
 void HostObject::set(jsi::Runtime &runtime, const jsi::PropNameID &name, const jsi::Value &value) {
@@ -31,9 +33,8 @@ std::vector<jsi::PropNameID> HostObject::getPropertyNames(jsi::Runtime &runtime)
   return propertyNamesIds;
 }
 
-const jsi::Object HostObject::makeObject(jsi::Runtime &runtime, GetFunction get, SetFunction set, GetPropertyNamesFunction getPropertyNames, DeallocFunction dealloc) {
-  auto hostObjectPtr = std::make_shared<HostObject>(get, set, getPropertyNames, dealloc);
-  return jsi::Object::createFromHostObject(runtime, hostObjectPtr);
+jsi::Object HostObject::makeObject(jsi::Runtime &runtime, GetFunction get, SetFunction set, GetPropertyNamesFunction getPropertyNames, DeallocFunction dealloc) {
+  return jsi::Object::createFromHostObject(runtime, std::make_shared<HostObject>(get, set, getPropertyNames, dealloc));
 }
 
 } // namespace expo

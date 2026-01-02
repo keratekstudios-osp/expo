@@ -71,11 +71,6 @@ public final class AppContext: NSObject, @unchecked Sendable {
         destroy()
       } else if _runtime != oldValue {
         JavaScriptActor.assumeIsolated {
-//          if #available(iOS 16.4, *) {
-//            // Create a new Swift/C++ runtime to use it whenever possible
-//            _sxxRuntime = JS.Runtime(_runtime!.get())
-//          }
-
           // Try to install the core object automatically when the runtime changes.
           try? prepareRuntime()
         }
@@ -478,10 +473,10 @@ public final class AppContext: NSObject, @unchecked Sendable {
 
   // MARK: - Runtime
 
-//  @objc
-//  public func setRuntime(_ runtime: EXRuntime) {
-//    _runtime = ExpoRuntime(runtime.get())
-//  }
+  @objc
+  public func setRuntime(_ runtime: EXRuntimeWrapper) {
+    _runtime = ExpoRuntime(runtime.pull())
+  }
 
   @JavaScriptActor
   internal func prepareRuntime() throws {
@@ -494,46 +489,8 @@ public final class AppContext: NSObject, @unchecked Sendable {
 
     try coreModuleHolder.definition.decorate(object: coreObject, appContext: self)
 
-    // Initialize `global.expo`.
-    try runtime.initializeCoreObject(coreObject)
-
-    // Install `global.expo.EventEmitter`.
-//    EXJavaScriptRuntimeManager.installEventEmitterClass(runtime)
-
-    // Install `global.expo.SharedObject`.
-//    EXJavaScriptRuntimeManager.installSharedObjectClass(runtime) { [weak sharedObjectRegistry] objectId in
-//      sharedObjectRegistry?.delete(objectId)
-//    }
-
-    // Install `global.expo.SharedRef`.
-//    EXJavaScriptRuntimeManager.installSharedRefClass(runtime)
-
-    // Install `global.expo.NativeModule`.
-//    EXJavaScriptRuntimeManager.installNativeModuleClass(runtime)
-
-    // Install the modules host object as the `global.expo.modules`.
-    try installExpoModulesHostObject()
-//    EXJavaScriptRuntimeManager.installExpoModulesHostObject(self)
-  }
-
-  @JavaScriptActor
-  internal func installExpoModulesHostObject() throws {
-    let runtime = try runtime
-    let coreObject = try runtime.getCoreObject()
-
-    if coreObject.hasProperty("modules") {
-      // Host object already installed
-      return
-    }
-    let modulesHostObject = runtime.createHostObject(
-      get: { propertyName in
-        return .undefined
-      },
-      set: { propertyName, value in},
-      getPropertyNames: { [] },
-      dealloc: {}
-    )
-    coreObject.defineProperty("modules", value: modulesHostObject.toValue(), options: [.enumerable])
+    let installer = ExpoRuntimeInstaller(appContext: self, runtime: runtime)
+    try installer.installExpoObject(coreObject)
   }
 
   /**
