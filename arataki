@@ -1,0 +1,1 @@
+cd apps/eas-expo-go && npx eas-cli login && npx eas-cli build --platform android --profile publish-client
