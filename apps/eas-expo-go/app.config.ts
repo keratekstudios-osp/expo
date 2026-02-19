@@ -1,5 +1,4 @@
 import { ExpoConfig } from '@expo/config';
-import assert from 'assert';
 
 const base = {};
 
@@ -63,10 +62,29 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
 };
 
 const buildType = process.env.EAS_BUILD_PROFILE;
-assert(
-  buildType && mapBuildProfileToConfig[buildType],
-  'Set EAS_BUILD_PROFILE=release-client to run an eas-cli command in this directory against the release project.'
-);
 
-const config = mapBuildProfileToConfig[buildType];
+// When running local EAS CLI commands (e.g., `eas build`), EAS_BUILD_PROFILE
+// is not set yet. It will be set during the actual build on EAS servers.
+// Provide a default minimal config for local usage.
+let config: ExpoConfig;
+
+if (buildType && mapBuildProfileToConfig[buildType]) {
+  config = mapBuildProfileToConfig[buildType];
+} else {
+  // Provide minimal config for local EAS CLI commands
+  // The actual config will be determined when EAS_BUILD_PROFILE is set during the build
+  // Use the same project ID as release-client/publish-client since this is typically
+  // used for production builds
+  config = {
+    ...base,
+    slug: 'eas-expo-go',
+    name: 'EAS Expo Go',
+    extra: {
+      eas: {
+        projectId: '79a64298-2d61-42ae-9cc9-b2a358d6869e',
+      },
+    },
+  };
+}
+
 export default config;
