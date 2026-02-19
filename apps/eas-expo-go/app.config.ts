@@ -2,6 +2,18 @@ import { ExpoConfig } from '@expo/config';
 
 const base = {};
 
+// Shared configuration for release/publish builds
+const releaseConfig: ExpoConfig = {
+  ...base,
+  slug: 'release-expo-go',
+  name: 'Expo Go',
+  extra: {
+    eas: {
+      projectId: '79a64298-2d61-42ae-9cc9-b2a358d6869e',
+    },
+  },
+};
+
 const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
   'versioned-client-add-sdk': {
     ...base,
@@ -39,26 +51,8 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
       },
     },
   },
-  'release-client': {
-    ...base,
-    slug: 'release-expo-go',
-    name: 'Expo Go',
-    extra: {
-      eas: {
-        projectId: '79a64298-2d61-42ae-9cc9-b2a358d6869e',
-      },
-    },
-  },
-  'publish-client': {
-    ...base,
-    slug: 'release-expo-go',
-    name: 'Expo Go',
-    extra: {
-      eas: {
-        projectId: '79a64298-2d61-42ae-9cc9-b2a358d6869e',
-      },
-    },
-  },
+  'release-client': releaseConfig,
+  'publish-client': releaseConfig,
 };
 
 const buildType = process.env.EAS_BUILD_PROFILE;
@@ -73,18 +67,8 @@ if (buildType && mapBuildProfileToConfig[buildType]) {
 } else {
   // Provide minimal config for local EAS CLI commands
   // The actual config will be determined when EAS_BUILD_PROFILE is set during the build
-  // Use the same project ID as release-client/publish-client since this is typically
-  // used for production builds
-  config = {
-    ...base,
-    slug: 'eas-expo-go',
-    name: 'EAS Expo Go',
-    extra: {
-      eas: {
-        projectId: '79a64298-2d61-42ae-9cc9-b2a358d6869e',
-      },
-    },
-  };
+  // Use the same config as release-client/publish-client
+  config = releaseConfig;
 }
 
 export default config;
