@@ -1,0 +1,91 @@
+name: bare-expo (EAS Build)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Build profile'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+  push:
+    branches: [main, 'sdk-*']
+    paths:
+      - .github/workflows/bare-expo-eas-build.yml
+      - apps/bare-expo/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_android:
+    name: Build Android (${{ inputs.profile || 'production' }})
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: 👀 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⬢ Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 🏗️ Build Android with EAS
+        uses: ./.github/actions/eas-build
+        with:
+          platform: android
+          profile: ${{ inputs.profile || 'production' }}
+          projectRoot: apps/bare-expo
+          expoToken: ${{ secrets.EXPO_TOKEN }}
+
+  build_ios:
+    name: Build iOS (${{ inputs.profile || 'production' }})
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: 👀 Checkout
+        uses: actions/checkout@v4
+
+      - name: ⬢ Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 🏗️ Build iOS with EAS
+        uses: ./.github/actions/eas-build
+        with:
+          platform: ios
+          profile: ${{ inputs.profile || 'production' }}
+          projectRoot: apps/bare-expo
+          expoToken: ${{ secrets.EXPO_TOKEN }}
+
+  notify_failure:
+    name: 🔔 Notify on Slack
+    needs: [build_android, build_ios]
+    if: failure() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/sdk-'))
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: 👀 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔔 Notify Slack
+        uses: ./.github/actions/slack-notify
+        with:
+          webhook: ${{ secrets.slack_webhook_api }}
+          author_name: bare-expo (EAS Build)
