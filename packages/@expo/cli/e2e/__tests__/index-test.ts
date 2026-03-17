@@ -26,6 +26,11 @@ it('asserts with a deprecated command `npx expo send`', async () => {
     /expo send is deprecated/
   );
 });
+it('suggests `eas build -p all` for `npx expo build`', async () => {
+  await expect(executeExpoAsync(projectRoot, ['build'], { verbose: false })).rejects.toThrow(
+    /eas build -p all/
+  );
+});
 
 it('runs `npx expo --help`', async () => {
   const results = await executeExpoAsync(projectRoot, ['--help']);

@@ -152,6 +152,7 @@ if (!isSubcommand) {
     eject: 'npx expo prebuild',
     web: 'npx expo start --web',
     'start:web': 'npx expo start --web',
+    build: 'eas build -p all',
     'build:ios': 'eas build -p ios',
     'build:android': 'eas build -p android',
     'client:install:ios': 'npx expo start --ios',
